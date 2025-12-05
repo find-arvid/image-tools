@@ -8,8 +8,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Image Tools",
-  description: "Image Tools",
+  title: "Find.co | Image Creation and Optimisation",
+  description: "Image Creation and Optimisation",
 };
 
 export default function RootLayout({
