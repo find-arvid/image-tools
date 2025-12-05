@@ -1,35 +1,111 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="text-center space-y-6 max-w-[470px]">
-        <div className="container mx-auto px-4 py-8 bg-card rounded-lg border shadow-lg">
-          <div className="mb-6">
-            <Image
-              src="/webo-cover.webp"
-              alt="Webopedia News Image Generator Example"
-              width={800}
-              height={450}
-              className="w-full h-auto rounded-lg mx-auto"
-              priority
-            />
+    <div 
+      className="min-h-screen flex flex-col items-center justify-center px-4"
+      style={{
+        backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+      }}
+    >
+      <div className="text-center max-w-[940px] w-full space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col items-center gap-6 text-left w-full">
+          {/* Small informational text */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full inline-flex">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span>New from the design team: tools that save you hours</span>
           </div>
-          <div className="space-y-6">
-            <h1 className="text-4xl font-bold">Webopedia News Overlay</h1>
-            <p className="text-muted-foreground text-lg">
-              Turn any image into a Webopedia news visual in seconds. The tool converts your image to greyscale, lets you crop it to the site's 16:9 aspect ratio and applies our branded overlay. It also compresses the file for faster loading, helps you name it using SEO best practices and exports it as a lightweight WEBP file ready to upload.
-            </p>
-            <div className="pt-4">
-              <Link href="/webo-news-overlay">
-                <Button size="lg" variant="default">
-                  Open Webo News Overlay
+          
+          {/* Main heading */}
+          <h1 className="text-5xl font-bold text-white w-full text-center">
+            Optimise quickly. Publish sooner.
+          </h1>
+          
+          {/* Body text */}
+          <p className="text-base text-muted-foreground max-w-2xl text-center">
+            Save time on every story with quick, reliable tools that streamline image creation and optimisation. Built to make your workflow faster and more consistent, each tool helps you produce high quality visuals with far less effort.
+          </p>
+        </div>
+        
+        {/* Cards Grid */}
+        <div className="grid grid-cols-2 gap-6 [&>*:first-child:hover]:scale-[1.02] [&>*:first-child:hover~*]:scale-[0.98] [&:has(>*:last-child:hover)>*:last-child]:scale-[1.02] [&:has(>*:last-child:hover)>*:first-child]:scale-[0.98]">
+          <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-white/20">
+            <div className="px-0">
+              <Image
+                src="/webo-cover.webp"
+                alt="Webopedia News Image Generator Example"
+                width={800}
+                height={450}
+                className="w-full h-auto rounded-lg"
+                priority
+              />
+            </div>
+            <CardHeader className="text-left pb-0 px-0">
+              <CardTitle className="text-lg font-bold text-white">Webopedia News Overlay</CardTitle>
+            </CardHeader>
+            <CardContent className="text-left pt-0 px-0">
+              <div className="text-muted-foreground text-sm">
+                <p className="mb-3">
+                  Turn any image into a Webopedia news visual in seconds.
+                </p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Converts your image to greyscale</li>
+                  <li>Crops it to the site's 16:9 aspect ratio</li>
+                  <li>Applies the branded overlay</li>
+                  <li>Compresses the file for faster loading</li>
+                  <li>Guides you to name it using SEO best practice</li>
+                  <li>Exports a lightweight WEBP file ready to upload</li>
+                </ul>
+              </div>
+            </CardContent>
+            <CardFooter className="text-left mt-auto pt-0 px-0">
+              <Link href="/webo-news-overlay" className="w-full">
+                <Button className="w-full">
+                  Create Webopedia visual
                 </Button>
               </Link>
+            </CardFooter>
+          </Card>
+          <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-white/20">
+            <div className="px-0">
+              <Image
+                src="/ccn-cover.webp"
+                alt="CCN Image Optimiser Example"
+                width={800}
+                height={450}
+                className="w-full h-auto rounded-lg"
+                priority
+              />
             </div>
-          </div>
+            <CardHeader className="text-left pb-0 px-0">
+              <CardTitle className="text-lg font-bold text-white">CCN Image Optimiser</CardTitle>
+            </CardHeader>
+            <CardContent className="text-left pt-0 px-0">
+              <div className="text-muted-foreground text-sm">
+                <p className="mb-3">
+                  Crop and resize any image in seconds while meeting all CCN image guidelines.
+                </p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Follows all CCN image requirements</li>
+                  <li>Compresses files for faster loading</li>
+                  <li>Guides you to name images using SEO best practice</li>
+                  <li>Exports lightweight WEBP files ready to upload</li>
+                </ul>
+              </div>
+            </CardContent>
+            <CardFooter className="text-left mt-auto pt-0 px-0">
+              <Link href="/ccn-image-optimiser" className="w-full">
+                <Button className="w-full">
+                  Optimise image for CCN
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </div>
