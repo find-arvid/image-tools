@@ -8,8 +8,8 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Webo Overlay",
-  description: "Webo Overlay",
+  title: "Image Tools",
+  description: "Image Tools",
 };
 
 export default function RootLayout({
