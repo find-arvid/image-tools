@@ -1,17 +1,23 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import InteractiveDotsBackground from '@/components/interactive-dots-background';
 
 export default function Home() {
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center px-4"
-      style={{
-        backgroundImage: 'radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
-      }}
-    >
+    <>
+      <InteractiveDotsBackground 
+        dotSpacing={24}
+        dotColor="rgba(207, 224, 45)"
+        baseOpacity={0.12}
+        hoverRadius={50}
+        hoverScale={1.5}
+        hoverOpacity={0.3}
+      />
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 relative z-0">
       <div className="text-center max-w-[940px] w-full space-y-8">
         {/* Header Section */}
         <div className="flex flex-col items-center gap-6 text-left w-full">
@@ -108,6 +114,7 @@ export default function Home() {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
