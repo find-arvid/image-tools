@@ -44,7 +44,6 @@ export default function StatisticsPage() {
     'ccn-image-optimiser': 0,
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const trackingStartDate = new Date('2025-12-06'); // Tracking start date
 
   useEffect(() => {
@@ -57,15 +56,24 @@ export default function StatisticsPage() {
         const data = await response.json();
         console.log('Fetched stats data:', data); // Debug log
         
-        // Check if there's an error in the response
+        // If there's an error (e.g., Redis not configured), just use 0s
+        // Don't show an error to the user, just show empty stats
         if (data.error) {
-          console.error('API returned error:', data.error);
-          setError(data.error);
+          console.warn('API returned error (showing 0s):', data.error);
+          setStats({
+            'webo-news-overlay': 0,
+            'ccn-image-optimiser': 0,
+          });
         } else {
           setStats(data);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        // If there's a network error, just keep showing 0s
+        console.error('Error fetching stats:', err);
+        setStats({
+          'webo-news-overlay': 0,
+          'ccn-image-optimiser': 0,
+        });
       } finally {
         setLoading(false);
       }
@@ -91,11 +99,6 @@ export default function StatisticsPage() {
 
         {loading ? (
           <div className="text-center text-muted-foreground">Loading statistics...</div>
-        ) : error ? (
-          <div className="text-center">
-            <div className="text-destructive mb-2">Error: {error}</div>
-            <p className="text-sm text-muted-foreground">Check browser console for details</p>
-          </div>
         ) : (
           <>
             <Card>
@@ -146,7 +149,7 @@ export default function StatisticsPage() {
                       : 'No usage yet'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-                    Tracking since {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    Tracking since {trackingStartDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                 </CardContent>
               </Card>
