@@ -19,10 +19,19 @@ async function getRedisClient() {
   }
 
   try {
+    // Redis Cloud typically requires TLS
+    // If URL starts with redis:// but points to Redis Cloud, enable TLS
+    let connectionUrl = redisUrl;
+    if (redisUrl.startsWith('redis://') && redisUrl.includes('redislabs.com')) {
+      // Convert to rediss:// for TLS
+      connectionUrl = redisUrl.replace('redis://', 'rediss://');
+    }
+
     const client = createClient({
-      url: redisUrl,
+      url: connectionUrl,
       socket: {
         reconnectStrategy: false, // Don't auto-reconnect in serverless
+        tls: connectionUrl.startsWith('rediss://'), // Enable TLS for rediss://
       },
     });
 
@@ -31,7 +40,7 @@ async function getRedisClient() {
       await Promise.race([
         client.connect(),
         new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Redis connection timeout')), 5000)
+          setTimeout(() => reject(new Error('Redis connection timeout')), 10000)
         ),
       ]);
     }
@@ -39,6 +48,7 @@ async function getRedisClient() {
     return client;
   } catch (error) {
     console.error('Failed to create Redis client:', error);
+    console.error('Redis URL (masked):', redisUrl ? `${redisUrl.substring(0, 20)}...` : 'Not set');
     return null;
   }
 }
@@ -53,8 +63,9 @@ export async function POST(request: NextRequest) {
     const redisUrl = getRedisUrl();
     if (!redisUrl) {
       console.error('Redis not configured. Missing REDIS_URL environment variable.');
-      console.error('Available env vars:', {
+      console.error('Environment check:', {
         hasREDIS_URL: !!process.env.REDIS_URL,
+        REDIS_URL_length: process.env.REDIS_URL?.length || 0,
         hasUPSTASH_REDIS_REST_URL: !!process.env.UPSTASH_REDIS_REST_URL,
       });
       return NextResponse.json(
@@ -62,6 +73,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    
+    console.log('Redis URL configured, length:', redisUrl.length);
 
     const { tool } = await request.json();
 
@@ -109,12 +122,18 @@ export async function GET() {
     const redisUrl = getRedisUrl();
     if (!redisUrl) {
       console.error('Redis not configured. Missing REDIS_URL environment variable.');
+      console.error('Environment check:', {
+        hasREDIS_URL: !!process.env.REDIS_URL,
+        REDIS_URL_length: process.env.REDIS_URL?.length || 0,
+      });
       return NextResponse.json({
         'webo-news-overlay': 0,
         'ccn-image-optimiser': 0,
         error: 'Redis not configured',
       });
     }
+    
+    console.log('Redis URL configured for GET, length:', redisUrl.length);
 
     // Get Redis client and fetch counts
     client = await getRedisClient();
