@@ -132,7 +132,7 @@ export default function StatisticsPage() {
                     );
                   })()}
                   <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-                    Tracking since {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    Tracking since {trackingStartDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                 </CardContent>
               </Card>
