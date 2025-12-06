@@ -4,10 +4,15 @@ import { createClient } from 'redis';
 // Works with standard Redis (redis://) connection strings
 // Uses REDIS_URL environment variable (standard Redis Cloud/Redislabs format)
 
-const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
+// Helper function to get Redis URL (read from env at runtime, not module load time)
+function getRedisUrl(): string | undefined {
+  return process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
+}
 
 // Helper function to get Redis client
 async function getRedisClient() {
+  const redisUrl = getRedisUrl();
+  
   if (!redisUrl) {
     console.error('Redis URL not configured');
     return null;
@@ -50,9 +55,14 @@ export async function POST(request: NextRequest) {
   let client = null;
   
   try {
-    // Check if Redis URL is configured
+    // Check if Redis URL is configured (read at runtime)
+    const redisUrl = getRedisUrl();
     if (!redisUrl) {
       console.error('Redis not configured. Missing REDIS_URL environment variable.');
+      console.error('Available env vars:', {
+        hasREDIS_URL: !!process.env.REDIS_URL,
+        hasUPSTASH_REDIS_REST_URL: !!process.env.UPSTASH_REDIS_REST_URL,
+      });
       return NextResponse.json(
         { error: 'Redis not configured', details: 'Missing REDIS_URL environment variable' },
         { status: 500 }
@@ -71,6 +81,7 @@ export async function POST(request: NextRequest) {
     // Get Redis client and increment counter
     client = await getRedisClient();
     if (!client) {
+      console.error('Failed to get Redis client. Redis URL:', redisUrl ? 'Set' : 'Not set');
       throw new Error('Failed to connect to Redis');
     }
 
@@ -93,7 +104,11 @@ export async function POST(request: NextRequest) {
   } finally {
     // Close connection in serverless environment
     if (client && client.isOpen) {
-      await client.quit().catch(() => {});
+      try {
+        await client.quit();
+      } catch (closeError) {
+        console.error('Error closing Redis connection:', closeError);
+      }
     }
   }
 }
@@ -102,7 +117,8 @@ export async function GET() {
   let client = null;
 
   try {
-    // Check if Redis URL is configured
+    // Check if Redis URL is configured (read at runtime)
+    const redisUrl = getRedisUrl();
     if (!redisUrl) {
       console.error('Redis not configured. Missing REDIS_URL environment variable.');
       return NextResponse.json({
