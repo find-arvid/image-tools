@@ -5,14 +5,39 @@ import { Redis } from '@upstash/redis';
 // If using Vercel KV, it will auto-detect from environment variables
 // If using Upstash, set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
 
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+// Check for environment variables in order of preference
+// Upstash uses: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
+// Vercel KV uses: KV_REST_API_URL, KV_REST_API_TOKEN
+// Some Redis providers might use: REDIS_URL, REDIS_TOKEN or custom prefixes
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL 
+  || process.env.KV_REST_API_URL
+  || process.env.REDIS_URL
+  || process.env.STORAGE_URL; // Vercel sometimes uses STORAGE prefix
+
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
+  || process.env.KV_REST_API_TOKEN
+  || process.env.REDIS_TOKEN
+  || process.env.STORAGE_TOKEN; // Vercel sometimes uses STORAGE prefix
 
 // Initialize Redis only if credentials are available
 const redis = redisUrl && redisToken ? new Redis({
   url: redisUrl,
   token: redisToken,
 }) : null;
+
+// Log available environment variables for debugging (only in development)
+if (process.env.NODE_ENV === 'development' && !redis) {
+  console.log('Available Redis-related env vars:', {
+    hasUPSTASH_URL: !!process.env.UPSTASH_REDIS_REST_URL,
+    hasUPSTASH_TOKEN: !!process.env.UPSTASH_REDIS_REST_TOKEN,
+    hasKV_URL: !!process.env.KV_REST_API_URL,
+    hasKV_TOKEN: !!process.env.KV_REST_API_TOKEN,
+    hasREDIS_URL: !!process.env.REDIS_URL,
+    hasREDIS_TOKEN: !!process.env.REDIS_TOKEN,
+    hasSTORAGE_URL: !!process.env.STORAGE_URL,
+    hasSTORAGE_TOKEN: !!process.env.STORAGE_TOKEN,
+  });
+}
 
 type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
 
