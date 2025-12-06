@@ -53,6 +53,7 @@ export default function StatisticsPage() {
           throw new Error('Failed to fetch statistics');
         }
         const data = await response.json();
+        console.log('Fetched stats data:', data); // Debug log
         setStats(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -107,7 +108,7 @@ export default function StatisticsPage() {
                       ? `${Math.round((stats['webo-news-overlay'] / totalUsage) * 100)}% of total usage`
                       : 'No usage yet'}
                   </p>
-                  {stats.timeSaved && stats.timeSaved['webo-news-overlay'] > 0 && (
+                  {stats.timeSaved && typeof stats.timeSaved['webo-news-overlay'] === 'number' && (
                     <p className="text-sm font-medium text-green-400 mt-3">
                       ⏱️ Time saved: {formatTimeSaved(stats.timeSaved['webo-news-overlay'])}
                     </p>
