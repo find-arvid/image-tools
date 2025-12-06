@@ -9,17 +9,26 @@ const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
 // Helper function to get Redis client
 async function getRedisClient() {
   if (!redisUrl) {
+    console.error('Redis URL not configured');
     return null;
   }
 
   try {
     const client = createClient({
       url: redisUrl,
+      socket: {
+        reconnectStrategy: false, // Don't auto-reconnect in serverless
+      },
     });
 
-    // Connect to Redis
+    // Connect to Redis with timeout
     if (!client.isOpen) {
-      await client.connect();
+      await Promise.race([
+        client.connect(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Redis connection timeout')), 5000)
+        ),
+      ]);
     }
 
     return client;

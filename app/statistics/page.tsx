@@ -54,7 +54,14 @@ export default function StatisticsPage() {
         }
         const data = await response.json();
         console.log('Fetched stats data:', data); // Debug log
-        setStats(data);
+        
+        // Check if there's an error in the response
+        if (data.error) {
+          console.error('API returned error:', data.error);
+          setError(data.error);
+        } else {
+          setStats(data);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An error occurred');
       } finally {
@@ -83,7 +90,10 @@ export default function StatisticsPage() {
         {loading ? (
           <div className="text-center text-muted-foreground">Loading statistics...</div>
         ) : error ? (
-          <div className="text-center text-destructive">Error: {error}</div>
+          <div className="text-center">
+            <div className="text-destructive mb-2">Error: {error}</div>
+            <p className="text-sm text-muted-foreground">Check browser console for details</p>
+          </div>
         ) : (
           <>
             <Card>
