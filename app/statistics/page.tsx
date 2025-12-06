@@ -6,6 +6,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 type UsageStats = {
   'webo-news-overlay': number;
   'ccn-image-optimiser': number;
+  timeSaved?: {
+    'webo-news-overlay': number;
+    'ccn-image-optimiser': number;
+  };
 };
 
 const toolNames: Record<keyof UsageStats, string> = {
@@ -13,10 +17,30 @@ const toolNames: Record<keyof UsageStats, string> = {
   'ccn-image-optimiser': 'CCN Image Optimiser',
 };
 
+// Helper function to format minutes into readable time
+function formatTimeSaved(minutes: number): string {
+  if (minutes === 0) return '0 minutes';
+  
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  
+  if (hours === 0) {
+    return `${mins} minute${mins !== 1 ? 's' : ''}`;
+  } else if (mins === 0) {
+    return `${hours} hour${hours !== 1 ? 's' : ''}`;
+  } else {
+    return `${hours} hour${hours !== 1 ? 's' : ''} ${mins} minute${mins !== 1 ? 's' : ''}`;
+  }
+}
+
 export default function StatisticsPage() {
   const [stats, setStats] = useState<UsageStats>({
     'webo-news-overlay': 0,
     'ccn-image-optimiser': 0,
+    timeSaved: {
+      'webo-news-overlay': 0,
+      'ccn-image-optimiser': 0,
+    },
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +107,11 @@ export default function StatisticsPage() {
                       ? `${Math.round((stats['webo-news-overlay'] / totalUsage) * 100)}% of total usage`
                       : 'No usage yet'}
                   </p>
+                  {stats.timeSaved && stats.timeSaved['webo-news-overlay'] > 0 && (
+                    <p className="text-sm font-medium text-green-400 mt-3">
+                      ⏱️ Time saved: {formatTimeSaved(stats.timeSaved['webo-news-overlay'])}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
                     Tracking since {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>

@@ -31,6 +31,12 @@ async function getRedisClient() {
 
 type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
 
+// Time saved per use in minutes
+const TIME_SAVED_PER_USE: Record<ToolName, number> = {
+  'webo-news-overlay': 10, // 10 minutes per use
+  'ccn-image-optimiser': 0, // Not tracking yet
+};
+
 export async function POST(request: NextRequest) {
   let client = null;
   
@@ -61,7 +67,13 @@ export async function POST(request: NextRequest) {
 
     const count = await client.incr(`usage:${tool}`);
 
-    console.log(`Tracked usage for ${tool}: ${count}`);
+    // Track time saved if applicable
+    const timeSavedPerUse = TIME_SAVED_PER_USE[tool as ToolName];
+    if (timeSavedPerUse > 0) {
+      await client.incrBy(`time-saved:${tool}`, timeSavedPerUse);
+    }
+
+    console.log(`Tracked usage for ${tool}: ${count}${timeSavedPerUse > 0 ? `, time saved: ${timeSavedPerUse} minutes` : ''}`);
     return NextResponse.json({ success: true, count });
   } catch (error) {
     console.error('Error tracking usage:', error);
@@ -87,6 +99,10 @@ export async function GET() {
       return NextResponse.json({
         'webo-news-overlay': 0,
         'ccn-image-optimiser': 0,
+        timeSaved: {
+          'webo-news-overlay': 0,
+          'ccn-image-optimiser': 0,
+        },
         error: 'Redis not configured',
       });
     }
@@ -97,24 +113,36 @@ export async function GET() {
       throw new Error('Failed to connect to Redis');
     }
 
-    const [weboCount, ccnCount] = await Promise.all([
+    const [weboCount, ccnCount, weboTimeSaved, ccnTimeSaved] = await Promise.all([
       client.get('usage:webo-news-overlay'),
       client.get('usage:ccn-image-optimiser'),
+      client.get('time-saved:webo-news-overlay'),
+      client.get('time-saved:ccn-image-optimiser'),
     ]);
 
     // Parse results (Redis returns strings, need to convert to numbers)
     const weboNum = weboCount ? parseInt(weboCount, 10) : 0;
     const ccnNum = ccnCount ? parseInt(ccnCount, 10) : 0;
+    const weboTime = weboTimeSaved ? parseInt(weboTimeSaved, 10) : 0;
+    const ccnTime = ccnTimeSaved ? parseInt(ccnTimeSaved, 10) : 0;
 
     return NextResponse.json({
       'webo-news-overlay': isNaN(weboNum) ? 0 : weboNum,
       'ccn-image-optimiser': isNaN(ccnNum) ? 0 : ccnNum,
+      timeSaved: {
+        'webo-news-overlay': isNaN(weboTime) ? 0 : weboTime,
+        'ccn-image-optimiser': isNaN(ccnTime) ? 0 : ccnTime,
+      },
     });
   } catch (error) {
     console.error('Error fetching usage:', error);
     return NextResponse.json({
       'webo-news-overlay': 0,
       'ccn-image-optimiser': 0,
+      timeSaved: {
+        'webo-news-overlay': 0,
+        'ccn-image-optimiser': 0,
+      },
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   } finally {
