@@ -4,20 +4,46 @@ import { Redis } from '@upstash/redis';
 // Simple, reliable statistics tracking using Upstash Redis
 // REST-based API - perfect for serverless, no connection management needed!
 
-// Initialize Upstash Redis client
-// Automatically uses UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN from environment
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL || '',
-  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-});
-
 type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
+
+// Helper function to get Upstash Redis client
+// Try multiple possible environment variable names
+function getRedisClient(): Redis | null {
+  // Check for various possible environment variable names
+  const url = 
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.UPSTASH_REST_API_URL ||
+    process.env.UPSTASH_REDIS_REST_URL_STORAGE ||
+    process.env.STORAGE_REDIS_URL;
+
+  const token = 
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.UPSTASH_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN_STORAGE ||
+    process.env.STORAGE_REDIS_TOKEN;
+
+  if (!url || !token) {
+    console.error('Upstash Redis not configured. Missing environment variables.');
+    console.error('Looking for:', {
+      hasUPSTASH_REDIS_REST_URL: !!process.env.UPSTASH_REDIS_REST_URL,
+      hasUPSTASH_REST_API_URL: !!process.env.UPSTASH_REST_API_URL,
+      hasUPSTASH_REDIS_REST_TOKEN: !!process.env.UPSTASH_REDIS_REST_TOKEN,
+      hasUPSTASH_REST_API_TOKEN: !!process.env.UPSTASH_REST_API_TOKEN,
+      envKeys: Object.keys(process.env).filter(k => k.includes('UPSTASH') || k.includes('STORAGE')),
+    });
+    return null;
+  }
+
+  return new Redis({
+    url,
+    token,
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if Upstash is configured
-    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-      console.error('Upstash Redis not configured');
+    const redis = getRedisClient();
+    if (!redis) {
       return NextResponse.json(
         { error: 'Redis not configured', details: 'Missing Upstash environment variables' },
         { status: 500 }
@@ -53,9 +79,8 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    // Check if Upstash is configured
-    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-      console.error('Upstash Redis not configured');
+    const redis = getRedisClient();
+    if (!redis) {
       return NextResponse.json({
         'webo-news-overlay': 0,
         'ccn-image-optimiser': 0,
