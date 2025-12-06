@@ -8,6 +8,7 @@ type UsageStats = {
   'ccn-image-optimiser': number;
 };
 
+// Separate type for tool names only (excludes timeSaved)
 type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
 
 const toolNames: Record<ToolName, string> = {
