@@ -1,35 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 
-// Simple, reliable statistics tracking using Upstash Redis
+// Simple, reliable statistics tracking using Upstash Redis via Vercel KV
 // REST-based API - perfect for serverless, no connection management needed!
 
 type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
 
 // Helper function to get Upstash Redis client
-// Try multiple possible environment variable names
+// Vercel creates KV_REST_API_URL and KV_REST_API_TOKEN when connecting Upstash
 function getRedisClient(): Redis | null {
-  // Check for various possible environment variable names
-  const url = 
-    process.env.UPSTASH_REDIS_REST_URL ||
-    process.env.UPSTASH_REST_API_URL ||
-    process.env.UPSTASH_REDIS_REST_URL_STORAGE ||
-    process.env.STORAGE_REDIS_URL;
-
-  const token = 
-    process.env.UPSTASH_REDIS_REST_TOKEN ||
-    process.env.UPSTASH_REST_API_TOKEN ||
-    process.env.UPSTASH_REDIS_REST_TOKEN_STORAGE ||
-    process.env.STORAGE_REDIS_TOKEN;
+  // Vercel creates these variables when you connect Upstash via marketplace
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
 
   if (!url || !token) {
     console.error('Upstash Redis not configured. Missing environment variables.');
     console.error('Looking for:', {
-      hasUPSTASH_REDIS_REST_URL: !!process.env.UPSTASH_REDIS_REST_URL,
-      hasUPSTASH_REST_API_URL: !!process.env.UPSTASH_REST_API_URL,
-      hasUPSTASH_REDIS_REST_TOKEN: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-      hasUPSTASH_REST_API_TOKEN: !!process.env.UPSTASH_REST_API_TOKEN,
-      envKeys: Object.keys(process.env).filter(k => k.includes('UPSTASH') || k.includes('STORAGE')),
+      hasKV_REST_API_URL: !!process.env.KV_REST_API_URL,
+      hasKV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
+      envKeys: Object.keys(process.env).filter(k => 
+        k.includes('UPSTASH') || k.includes('KV') || k.includes('REDIS') || k.includes('STORAGE')
+      ),
     });
     return null;
   }
@@ -45,7 +36,7 @@ export async function POST(request: NextRequest) {
     const redis = getRedisClient();
     if (!redis) {
       return NextResponse.json(
-        { error: 'Redis not configured', details: 'Missing Upstash environment variables' },
+        { error: 'Redis not configured', details: 'Missing KV_REST_API_URL or KV_REST_API_TOKEN environment variables' },
         { status: 500 }
       );
     }
