@@ -378,7 +378,37 @@ export default function Home() {
   };
 
   const formatArticleName = (name: string): string => {
+    // Currency symbol mappings
+    const currencyMap: { [key: string]: string } = {
+      '$': 'USD',
+      '€': 'EUR',
+      '£': 'GBP',
+      '¥': 'JPY',
+      '₹': 'INR',
+      '₽': 'RUB',
+      '₩': 'KRW',
+      '₨': 'PKR',
+      '₦': 'NGN',
+      '₡': 'CRC',
+      '₪': 'ILS',
+      '₫': 'VND',
+      '₭': 'LAK',
+      '₮': 'MNT',
+      '₯': 'GRD',
+      '₰': 'DEM',
+      '₱': 'PHP',
+      '₲': 'PYG',
+      '₳': 'ARA',
+      '₴': 'UAH',
+      '₵': 'GHS',
+      '₶': 'BYN',
+      '₷': 'KZT',
+      '₸': 'KZT',
+    };
+
     return name
+      .replace(/%/g, 'percent') // Convert % to "percent"
+      .replace(/\$|€|£|¥|₹|₽|₩|₨|₦|₡|₪|₫|₭|₮|₯|₰|₱|₲|₳|₴|₵|₶|₷|₸/g, (match) => currencyMap[match] || match) // Convert currency symbols
       .toLowerCase()
       .trim()
       .replace(/\s+/g, '-')  // Replace spaces with dashes
@@ -472,10 +502,16 @@ export default function Home() {
         {showArticleNameInput && pendingDownloadColor ? (
           <div ref={articleNameSectionRef} className="flex min-h-[calc(100vh-20rem)] items-center justify-center">
             <div className="w-full max-w-md flex flex-col items-center gap-4 p-6 border border-border rounded-lg bg-card">
-              <p className="text-sm font-medium">Enter Article Name</p>
-              <p className="text-xs text-muted-foreground text-center">
-                This name will be used for the downloaded file
-              </p>
+              <p className="text-sm font-medium">Name your image</p>
+              <div className="text-xs text-muted-foreground text-left w-full space-y-2">
+                <p>Paste the article name into the box. We'll turn it into an optimised file name before download. Here's what happens:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>All letters become lowercase</li>
+                  <li>Words are separated by hyphens</li>
+                  <li>Special characters are removed (e.g. ! ? &)</li>
+                  <li>% and currency symbols are converted (e.g. 50% → 50percent, €10 → 10EUR)</li>
+                </ul>
+              </div>
               <input
                 type="text"
                 value={articleName}
@@ -485,7 +521,7 @@ export default function Home() {
                     performDownload();
                   }
                 }}
-                placeholder="Article title..."
+                placeholder="Article title"
                 className="w-full px-4 py-2 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 autoFocus
               />

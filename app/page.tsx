@@ -17,8 +17,8 @@ export default function Home() {
         hoverScale={1.5}
         hoverOpacity={0.3}
       />
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 relative z-0">
-      <div className="text-center max-w-[940px] w-full space-y-8">
+      <div className="flex flex-col items-center justify-center px-4 pt-16 pb-24 relative z-0">
+      <div className="text-center max-w-[940px] w-full space-y-16">
         {/* Header Section */}
         <div className="flex flex-col items-center gap-6 text-left w-full">
           {/* Small informational text */}
