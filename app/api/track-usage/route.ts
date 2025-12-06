@@ -17,6 +17,8 @@ const redisUrl = process.env.UPSTASH_REDIS_REST_URL
 const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
   || process.env.KV_REST_API_TOKEN
   || process.env.REDIS_TOKEN
+  || process.env.REDIS_PASSWORD
+  || process.env.REDIS_AUTH_TOKEN
   || process.env.STORAGE_TOKEN; // Vercel sometimes uses STORAGE prefix
 
 // Initialize Redis only if credentials are available
