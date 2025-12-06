@@ -13,22 +13,29 @@ function getRedisClient(): Redis | null {
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
 
+  // Debug logging to see what we have
+  console.log('Environment check:', {
+    hasKV_REST_API_URL: !!url,
+    hasKV_REST_API_TOKEN: !!token,
+    urlLength: url?.length || 0,
+    tokenLength: token?.length || 0,
+    allKVVars: Object.keys(process.env).filter(k => k.includes('KV') || k.includes('UPSTASH')),
+  });
+
   if (!url || !token) {
     console.error('Upstash Redis not configured. Missing environment variables.');
-    console.error('Looking for:', {
-      hasKV_REST_API_URL: !!process.env.KV_REST_API_URL,
-      hasKV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
-      envKeys: Object.keys(process.env).filter(k => 
-        k.includes('UPSTASH') || k.includes('KV') || k.includes('REDIS') || k.includes('STORAGE')
-      ),
-    });
     return null;
   }
 
-  return new Redis({
-    url,
-    token,
-  });
+  try {
+    return new Redis({
+      url,
+      token,
+    });
+  } catch (error) {
+    console.error('Failed to create Redis client:', error);
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -72,6 +79,7 @@ export async function GET() {
   try {
     const redis = getRedisClient();
     if (!redis) {
+      console.error('Redis client is null - returning 0s');
       return NextResponse.json({
         'webo-news-overlay': 0,
         'ccn-image-optimiser': 0,
@@ -85,6 +93,8 @@ export async function GET() {
       redis.get<number>('usage:webo-news-overlay'),
       redis.get<number>('usage:ccn-image-optimiser'),
     ]);
+
+    console.log('Fetched counts:', { weboCount, ccnCount });
 
     return NextResponse.json({
       'webo-news-overlay': typeof weboCount === 'number' ? weboCount : 0,
