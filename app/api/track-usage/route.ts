@@ -30,8 +30,10 @@ async function getRedisClient() {
     const client = createClient({
       url: connectionUrl,
       socket: {
-        reconnectStrategy: false, // Don't auto-reconnect in serverless
-        tls: connectionUrl.startsWith('rediss://'), // Enable TLS for rediss://
+        reconnectStrategy: () => {
+          // Don't reconnect in serverless - return error to stop retries
+          return new Error('Reconnection disabled in serverless environment');
+        },
       },
     });
 
