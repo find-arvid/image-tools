@@ -9,17 +9,42 @@ import { Redis } from '@upstash/redis';
 // Upstash uses: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
 // Vercel KV uses: KV_REST_API_URL, KV_REST_API_TOKEN
 // Some Redis providers might use: REDIS_URL, REDIS_TOKEN or custom prefixes
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL 
+
+let redisUrl = process.env.UPSTASH_REDIS_REST_URL 
   || process.env.KV_REST_API_URL
   || process.env.REDIS_URL
   || process.env.STORAGE_URL; // Vercel sometimes uses STORAGE prefix
 
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
+let redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
   || process.env.KV_REST_API_TOKEN
   || process.env.REDIS_TOKEN
   || process.env.REDIS_PASSWORD
   || process.env.REDIS_AUTH_TOKEN
   || process.env.STORAGE_TOKEN; // Vercel sometimes uses STORAGE prefix
+
+// If we only have REDIS_URL, check if it's a REST API URL that includes token
+// Some providers format it as: https://token@rest-endpoint.upstash.io
+// Or: redis://user:password@host:port (standard Redis connection string)
+if (redisUrl && !redisToken) {
+  try {
+    const url = new URL(redisUrl);
+    
+    // Handle REST API format: https://token@host
+    if (url.username && redisUrl.startsWith('https://')) {
+      redisToken = url.username;
+      redisUrl = `${url.protocol}//${url.hostname}${url.pathname}`;
+    }
+    // Handle standard Redis connection string: redis://user:password@host:port
+    // But note: @upstash/redis needs REST API, not standard Redis connection
+    else if (url.password && redisUrl.startsWith('redis://')) {
+      // Standard Redis connection string won't work with @upstash/redis
+      // User needs to get REST API credentials from their provider
+      console.warn('Standard Redis connection string detected. @upstash/redis requires REST API credentials.');
+    }
+  } catch (e) {
+    // URL parsing failed, continue with original URL
+  }
+}
 
 // Initialize Redis only if credentials are available
 const redis = redisUrl && redisToken ? new Redis({
