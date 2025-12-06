@@ -6,10 +6,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 type UsageStats = {
   'webo-news-overlay': number;
   'ccn-image-optimiser': number;
-  timeSaved?: {
-    'webo-news-overlay': number;
-    'ccn-image-optimiser': number;
-  };
 };
 
 type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
@@ -17,6 +13,12 @@ type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
 const toolNames: Record<ToolName, string> = {
   'webo-news-overlay': 'Webopedia News Overlay',
   'ccn-image-optimiser': 'CCN Image Optimiser',
+};
+
+// Time saved per use in minutes
+const TIME_SAVED_PER_USE: Record<ToolName, number> = {
+  'webo-news-overlay': 10, // 10 minutes per use
+  'ccn-image-optimiser': 0, // Not tracking yet
 };
 
 // Helper function to format minutes into readable time
@@ -39,10 +41,6 @@ export default function StatisticsPage() {
   const [stats, setStats] = useState<UsageStats>({
     'webo-news-overlay': 0,
     'ccn-image-optimiser': 0,
-    timeSaved: {
-      'webo-news-overlay': 0,
-      'ccn-image-optimiser': 0,
-    },
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -120,11 +118,14 @@ export default function StatisticsPage() {
                       ? `${Math.round((stats['webo-news-overlay'] / totalUsage) * 100)}% of total usage`
                       : 'No usage yet'}
                   </p>
-                  {stats.timeSaved && typeof stats.timeSaved['webo-news-overlay'] === 'number' && (
-                    <p className="text-sm font-medium text-green-400 mt-3">
-                      ⏱️ Time saved: {formatTimeSaved(stats.timeSaved['webo-news-overlay'])}
-                    </p>
-                  )}
+                  {(() => {
+                    const timeSaved = stats['webo-news-overlay'] * TIME_SAVED_PER_USE['webo-news-overlay'];
+                    return timeSaved > 0 && (
+                      <p className="text-sm font-medium text-green-400 mt-3">
+                        ⏱️ Time saved: {formatTimeSaved(timeSaved)}
+                      </p>
+                    );
+                  })()}
                   <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
                     Tracking since {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
