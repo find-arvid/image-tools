@@ -12,7 +12,9 @@ type UsageStats = {
   };
 };
 
-const toolNames: Record<keyof UsageStats, string> = {
+type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
+
+const toolNames: Record<ToolName, string> = {
   'webo-news-overlay': 'Webopedia News Overlay',
   'ccn-image-optimiser': 'CCN Image Optimiser',
 };
