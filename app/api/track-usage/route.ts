@@ -1,80 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Redis } from '@upstash/redis';
+import { createClient } from 'redis';
 
-// Works with both Upstash and Vercel KV
-// If using Vercel KV, it will auto-detect from environment variables
-// If using Upstash, set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+// Works with standard Redis (redis://) connection strings
+// Uses REDIS_URL environment variable (standard Redis Cloud/Redislabs format)
 
-// Check for environment variables in order of preference
-// Upstash uses: UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
-// Vercel KV uses: KV_REST_API_URL, KV_REST_API_TOKEN
-// Some Redis providers might use: REDIS_URL, REDIS_TOKEN or custom prefixes
+const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL;
 
-let redisUrl = process.env.UPSTASH_REDIS_REST_URL 
-  || process.env.KV_REST_API_URL
-  || process.env.REDIS_URL
-  || process.env.STORAGE_URL; // Vercel sometimes uses STORAGE prefix
-
-let redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
-  || process.env.KV_REST_API_TOKEN
-  || process.env.REDIS_TOKEN
-  || process.env.REDIS_PASSWORD
-  || process.env.REDIS_AUTH_TOKEN
-  || process.env.STORAGE_TOKEN; // Vercel sometimes uses STORAGE prefix
-
-// If we only have REDIS_URL, check if it's a REST API URL that includes token
-// Some providers format it as: https://token@rest-endpoint.upstash.io
-// Or: redis://user:password@host:port (standard Redis connection string)
-if (redisUrl && !redisToken) {
-  try {
-    const url = new URL(redisUrl);
-    
-    // Handle REST API format: https://token@host
-    if (url.username && redisUrl.startsWith('https://')) {
-      redisToken = url.username;
-      redisUrl = `${url.protocol}//${url.hostname}${url.pathname}`;
-    }
-    // Handle standard Redis connection string: redis://user:password@host:port
-    // But note: @upstash/redis needs REST API, not standard Redis connection
-    else if (url.password && redisUrl.startsWith('redis://')) {
-      // Standard Redis connection string won't work with @upstash/redis
-      // User needs to get REST API credentials from their provider
-      console.warn('Standard Redis connection string detected. @upstash/redis requires REST API credentials.');
-    }
-  } catch (e) {
-    // URL parsing failed, continue with original URL
+// Helper function to get Redis client
+async function getRedisClient() {
+  if (!redisUrl) {
+    return null;
   }
-}
 
-// Initialize Redis only if credentials are available
-const redis = redisUrl && redisToken ? new Redis({
-  url: redisUrl,
-  token: redisToken,
-}) : null;
+  try {
+    const client = createClient({
+      url: redisUrl,
+    });
 
-// Log available environment variables for debugging (only in development)
-if (process.env.NODE_ENV === 'development' && !redis) {
-  console.log('Available Redis-related env vars:', {
-    hasUPSTASH_URL: !!process.env.UPSTASH_REDIS_REST_URL,
-    hasUPSTASH_TOKEN: !!process.env.UPSTASH_REDIS_REST_TOKEN,
-    hasKV_URL: !!process.env.KV_REST_API_URL,
-    hasKV_TOKEN: !!process.env.KV_REST_API_TOKEN,
-    hasREDIS_URL: !!process.env.REDIS_URL,
-    hasREDIS_TOKEN: !!process.env.REDIS_TOKEN,
-    hasSTORAGE_URL: !!process.env.STORAGE_URL,
-    hasSTORAGE_TOKEN: !!process.env.STORAGE_TOKEN,
-  });
+    // Connect to Redis
+    if (!client.isOpen) {
+      await client.connect();
+    }
+
+    return client;
+  } catch (error) {
+    console.error('Failed to create Redis client:', error);
+    return null;
+  }
 }
 
 type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
 
 export async function POST(request: NextRequest) {
+  let client = null;
+  
   try {
-    // Check if Redis is configured
-    if (!redis) {
-      console.error('Redis not configured. Missing UPSTASH_REDIS_REST_URL or KV_REST_API_URL environment variables.');
+    // Check if Redis URL is configured
+    if (!redisUrl) {
+      console.error('Redis not configured. Missing REDIS_URL environment variable.');
       return NextResponse.json(
-        { error: 'Redis not configured', details: 'Missing environment variables' },
+        { error: 'Redis not configured', details: 'Missing REDIS_URL environment variable' },
         { status: 500 }
       );
     }
@@ -88,8 +53,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Increment counter in Redis (works with both Upstash and Vercel KV)
-    const count = await redis.incr(`usage:${tool}`);
+    // Get Redis client and increment counter
+    client = await getRedisClient();
+    if (!client) {
+      throw new Error('Failed to connect to Redis');
+    }
+
+    const count = await client.incr(`usage:${tool}`);
 
     console.log(`Tracked usage for ${tool}: ${count}`);
     return NextResponse.json({ success: true, count });
@@ -99,14 +69,21 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to track usage', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
+  } finally {
+    // Close connection in serverless environment
+    if (client && client.isOpen) {
+      await client.quit().catch(() => {});
+    }
   }
 }
 
 export async function GET() {
+  let client = null;
+
   try {
-    // Check if Redis is configured
-    if (!redis) {
-      console.error('Redis not configured. Missing UPSTASH_REDIS_REST_URL or KV_REST_API_URL environment variables.');
+    // Check if Redis URL is configured
+    if (!redisUrl) {
+      console.error('Redis not configured. Missing REDIS_URL environment variable.');
       return NextResponse.json({
         'webo-news-overlay': 0,
         'ccn-image-optimiser': 0,
@@ -114,15 +91,24 @@ export async function GET() {
       });
     }
 
-    // Fetch usage counts from Redis
+    // Get Redis client and fetch counts
+    client = await getRedisClient();
+    if (!client) {
+      throw new Error('Failed to connect to Redis');
+    }
+
     const [weboCount, ccnCount] = await Promise.all([
-      redis.get<number>('usage:webo-news-overlay'),
-      redis.get<number>('usage:ccn-image-optimiser'),
+      client.get('usage:webo-news-overlay'),
+      client.get('usage:ccn-image-optimiser'),
     ]);
 
+    // Parse results (Redis returns strings, need to convert to numbers)
+    const weboNum = weboCount ? parseInt(weboCount, 10) : 0;
+    const ccnNum = ccnCount ? parseInt(ccnCount, 10) : 0;
+
     return NextResponse.json({
-      'webo-news-overlay': typeof weboCount === 'number' ? weboCount : 0,
-      'ccn-image-optimiser': typeof ccnCount === 'number' ? ccnCount : 0,
+      'webo-news-overlay': isNaN(weboNum) ? 0 : weboNum,
+      'ccn-image-optimiser': isNaN(ccnNum) ? 0 : ccnNum,
     });
   } catch (error) {
     console.error('Error fetching usage:', error);
@@ -131,6 +117,10 @@ export async function GET() {
       'ccn-image-optimiser': 0,
       error: error instanceof Error ? error.message : 'Unknown error',
     });
+  } finally {
+    // Close connection in serverless environment
+    if (client && client.isOpen) {
+      await client.quit().catch(() => {});
+    }
   }
 }
-
