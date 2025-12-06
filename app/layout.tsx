@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/footer";
+import Navigation from "@/components/navigation";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body
         className={`${spaceGrotesk.variable} antialiased flex flex-col min-h-screen`}
       >
+        <Navigation />
         <main className="flex-1">
           {children}
         </main>

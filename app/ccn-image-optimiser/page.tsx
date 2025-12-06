@@ -4,10 +4,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
-import { Check, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Check, AlertCircle } from 'lucide-react';
 import { Dropzone, DropzoneContent, DropzoneEmptyState } from "@/components/ui/shadcn-io/dropzone";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { trackToolUsage } from '@/lib/track-usage';
 
 export default function Home() {
   const [files, setFiles] = useState<File[]>([]);
@@ -297,6 +298,9 @@ export default function Home() {
     link.click();
     document.body.removeChild(link);
     
+    // Track usage
+    trackToolUsage('ccn-image-optimiser');
+    
     // Show confirmation
     setDownloaded(true);
     setShowArticleNameInput(false);
@@ -327,16 +331,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Back to Home Button */}
-      <div className="fixed top-4 left-4 z-20">
-        <Link href="/">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
-          </Button>
-        </Link>
-      </div>
-      
       {/* Header - Always visible */}
       <header className="w-full max-w-4xl mx-auto px-4 pt-8 pb-4">
         <div className="text-center">
