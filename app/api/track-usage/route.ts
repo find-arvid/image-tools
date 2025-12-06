@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
 
-// Simple, reliable statistics tracking using Vercel KV
-// Much simpler than direct Redis - no connection management needed!
+// Simple, reliable statistics tracking using Upstash Redis
+// REST-based API - perfect for serverless, no connection management needed!
+
+// Initialize Upstash Redis client
+// Automatically uses UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN from environment
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+});
 
 type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Upstash is configured
+    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+      console.error('Upstash Redis not configured');
+      return NextResponse.json(
+        { error: 'Redis not configured', details: 'Missing Upstash environment variables' },
+        { status: 500 }
+      );
+    }
+
     const { tool } = await request.json();
 
     if (!tool || !['webo-news-overlay', 'ccn-image-optimiser'].includes(tool)) {
@@ -17,9 +33,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Increment counter using Vercel KV
+    // Increment counter using Upstash Redis
     // If key doesn't exist, it starts at 0, then increments to 1
-    const count = await kv.incr(`usage:${tool}`);
+    const count = await redis.incr(`usage:${tool}`);
 
     console.log(`Tracked usage for ${tool}: ${count}`);
     return NextResponse.json({ success: true, count });
@@ -37,11 +53,21 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    // Fetch counts from Vercel KV
+    // Check if Upstash is configured
+    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+      console.error('Upstash Redis not configured');
+      return NextResponse.json({
+        'webo-news-overlay': 0,
+        'ccn-image-optimiser': 0,
+        error: 'Redis not configured',
+      });
+    }
+
+    // Fetch counts from Upstash Redis
     // Returns null if key doesn't exist, so we default to 0
     const [weboCount, ccnCount] = await Promise.all([
-      kv.get<number>('usage:webo-news-overlay'),
-      kv.get<number>('usage:ccn-image-optimiser'),
+      redis.get<number>('usage:webo-news-overlay'),
+      redis.get<number>('usage:ccn-image-optimiser'),
     ]);
 
     return NextResponse.json({
