@@ -83,6 +83,9 @@ export default function StatisticsPage() {
                       ? `${Math.round((stats['webo-news-overlay'] / totalUsage) * 100)}% of total usage`
                       : 'No usage yet'}
                   </p>
+                  <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+                    Tracking since {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </p>
                 </CardContent>
               </Card>
 
@@ -96,6 +99,9 @@ export default function StatisticsPage() {
                     {totalUsage > 0
                       ? `${Math.round((stats['ccn-image-optimiser'] / totalUsage) * 100)}% of total usage`
                       : 'No usage yet'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+                    Tracking since {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
                 </CardContent>
               </Card>
