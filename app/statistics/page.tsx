@@ -45,6 +45,7 @@ export default function StatisticsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const trackingStartDate = new Date('2025-12-06'); // Tracking start date
 
   useEffect(() => {
     async function fetchStats() {
