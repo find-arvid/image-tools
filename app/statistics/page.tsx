@@ -19,7 +19,7 @@ const toolNames: Record<ToolName, string> = {
 // Time saved per use in minutes
 const TIME_SAVED_PER_USE: Record<ToolName, number> = {
   'webo-news-overlay': 10, // 10 minutes per use
-  'ccn-image-optimiser': 0, // Not tracking yet
+  'ccn-image-optimiser': 5, // 5 minutes per use
 };
 
 // Helper function to format minutes into readable time
@@ -148,6 +148,14 @@ export default function StatisticsPage() {
                       ? `${Math.round((stats['ccn-image-optimiser'] / totalUsage) * 100)}% of total usage`
                       : 'No usage yet'}
                   </p>
+                  {(() => {
+                    const timeSaved = stats['ccn-image-optimiser'] * TIME_SAVED_PER_USE['ccn-image-optimiser'];
+                    return timeSaved > 0 && (
+                      <p className="text-sm font-medium text-green-400 mt-3">
+                        ⏱️ Time saved: {formatTimeSaved(timeSaved)}
+                      </p>
+                    );
+                  })()}
                   <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
                     Tracking since {trackingStartDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </p>
