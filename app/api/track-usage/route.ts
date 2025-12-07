@@ -7,23 +7,38 @@ import { Redis } from '@upstash/redis';
 type ToolName = 'webo-news-overlay' | 'ccn-image-optimiser';
 
 // Helper function to get Upstash Redis client
-// Vercel creates KV_REST_API_URL and KV_REST_API_TOKEN when connecting Upstash
+// Netlify uses KV_REST_API_URL and KV_REST_API_TOKEN environment variables
 function getRedisClient(): Redis | null {
-  // Vercel creates these variables when you connect Upstash via marketplace
-  const url = process.env.KV_REST_API_URL;
-  const token = process.env.KV_REST_API_TOKEN;
+  // Check all possible environment variable names
+  const url = 
+    process.env.KV_REST_API_URL ||
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.UPSTASH_REST_API_URL;
 
-  // Debug logging to see what we have
-  console.log('Environment check:', {
-    hasKV_REST_API_URL: !!url,
-    hasKV_REST_API_TOKEN: !!token,
-    urlLength: url?.length || 0,
-    tokenLength: token?.length || 0,
-    allKVVars: Object.keys(process.env).filter(k => k.includes('KV') || k.includes('UPSTASH')),
-  });
+  const token = 
+    process.env.KV_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.UPSTASH_REST_API_TOKEN;
+
+  // Detailed debug logging
+  const allEnvKeys = Object.keys(process.env).sort();
+  const relevantKeys = allEnvKeys.filter(k => 
+    k.includes('KV') || 
+    k.includes('UPSTASH') || 
+    k.includes('REDIS') ||
+    k.includes('STORAGE')
+  );
+
+  console.log('=== Environment Variable Check ===');
+  console.log('KV_REST_API_URL:', process.env.KV_REST_API_URL ? 'SET' : 'NOT SET');
+  console.log('KV_REST_API_TOKEN:', process.env.KV_REST_API_TOKEN ? 'SET' : 'NOT SET');
+  console.log('Relevant env vars:', relevantKeys);
+  console.log('All env vars (first 20):', allEnvKeys.slice(0, 20));
+  console.log('================================');
 
   if (!url || !token) {
     console.error('Upstash Redis not configured. Missing environment variables.');
+    console.error('URL found:', !!url, 'Token found:', !!token);
     return null;
   }
 
@@ -43,7 +58,14 @@ export async function POST(request: NextRequest) {
     const redis = getRedisClient();
     if (!redis) {
       return NextResponse.json(
-        { error: 'Redis not configured', details: 'Missing KV_REST_API_URL or KV_REST_API_TOKEN environment variables' },
+        { 
+          error: 'Redis not configured', 
+          details: 'Missing KV_REST_API_URL or KV_REST_API_TOKEN environment variables',
+          debug: {
+            hasKV_REST_API_URL: !!process.env.KV_REST_API_URL,
+            hasKV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
+          }
+        },
         { status: 500 }
       );
     }
@@ -79,11 +101,19 @@ export async function GET() {
   try {
     const redis = getRedisClient();
     if (!redis) {
-      console.error('Redis client is null - returning 0s');
+      // Return debug info in the error response
+      const debugInfo = {
+        hasKV_REST_API_URL: !!process.env.KV_REST_API_URL,
+        hasKV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
+        allKVKeys: Object.keys(process.env).filter(k => k.includes('KV') || k.includes('UPSTASH')),
+      };
+      
+      console.error('Redis client is null - returning 0s with debug info');
       return NextResponse.json({
         'webo-news-overlay': 0,
         'ccn-image-optimiser': 0,
         error: 'Redis not configured',
+        debug: debugInfo,
       });
     }
 
