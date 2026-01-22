@@ -39,7 +39,7 @@ export default function Home() {
         </div>
         
         {/* Cards Grid */}
-        <div className="grid grid-cols-2 gap-6 [&>*:first-child:hover]:scale-[1.02] [&>*:first-child:hover~*]:scale-[0.98] [&:has(>*:last-child:hover)>*:last-child]:scale-[1.02] [&:has(>*:last-child:hover)>*:first-child]:scale-[0.98]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 [&>*:first-child:hover]:scale-[1.02] [&>*:first-child:hover~*]:scale-[0.98] [&:has(>*:last-child:hover)>*:last-child]:scale-[1.02] [&:has(>*:last-child:hover)>*:first-child]:scale-[0.98]">
           <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-white/20">
             <div className="px-0">
               <Image
@@ -108,6 +108,36 @@ export default function Home() {
               <Link href="/ccn-image-optimiser" className="w-full">
                 <Button className="w-full">
                   Optimise image for CCN
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
+          <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-white/20">
+            <div className="px-0">
+              <div className="w-full aspect-video bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center">
+                <div className="text-white text-4xl">▶</div>
+              </div>
+            </div>
+            <CardHeader className="text-left pb-0 px-0">
+              <CardTitle className="text-lg font-bold text-white">YouTube Video Thumbnail</CardTitle>
+            </CardHeader>
+            <CardContent className="text-left pt-0 px-0">
+              <div className="text-muted-foreground text-sm">
+                <p className="mb-3">
+                  Create custom YouTube video thumbnails by combining backgrounds, foregrounds, and text.
+                </p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Choose from a variety of background options</li>
+                  <li>Select foreground elements to layer</li>
+                  <li>Add custom text with styling options</li>
+                  <li>Export optimized thumbnails ready for YouTube</li>
+                </ul>
+              </div>
+            </CardContent>
+            <CardFooter className="text-left mt-auto pt-0 px-0">
+              <Link href="/youtube-thumbnail" className="w-full">
+                <Button className="w-full">
+                  Create YouTube thumbnail
                 </Button>
               </Link>
             </CardFooter>
