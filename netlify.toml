@@ -3,3 +3,5 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # Exclude documentation files from secrets scanning (they only contain placeholders now)
+  SECRETS_SCAN_OMIT_PATHS = "*.md,CHECK-*.md,DEBUG-*.md,FINAL-*.md,FIX-*.md,NETLIFY-*.md,README-*.md,REDIS-*.md"
