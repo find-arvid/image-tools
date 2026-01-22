@@ -39,11 +39,11 @@ If you selected "Different value for each deploy context":
 - Secret: ❌ Unchecked
 - Scopes: All scopes
 - Values: **Same value for all deploy contexts**
-- Value: `https://amazing-tortoise-34639.upstash.io`
+- Value: `https://your-upstash-instance.upstash.io` (replace with your actual Upstash URL)
 
 **Variable 2: `KV_REST_API_TOKEN`**
 - Secret: ✅ Checked
 - Scopes: All scopes (or just "Functions" if you prefer)
 - Values: **Same value for all deploy contexts**
-- Value: `AYdPAAIncDIwZGQwNTVlNzcyZjc0YTU3OTkwNzE3NTA3NjJiNzM0MXAyMzQ2Mzk`
+- Value: `your-kv-rest-api-token-here` (replace with your actual token from Upstash dashboard)
 

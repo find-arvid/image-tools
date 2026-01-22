@@ -15,12 +15,12 @@ You need to add the same environment variables to Netlify:
 
    **Variable 1: `KV_REST_API_URL`**
    - Key: `KV_REST_API_URL`
-   - Value: `https://amazing-tortoise-34639.upstash.io`
+   - Value: `https://your-upstash-instance.upstash.io` (replace with your actual Upstash URL)
    - ✅ **Don't check** "Contains secret values" (it's just a URL)
    
    **Variable 2: `KV_REST_API_TOKEN`**
    - Key: `KV_REST_API_TOKEN`
-   - Value: `AYdPAAIncDIwZGQwNTVlNzcyZjc0YTU3OTkwNzE3NTA3NjJiNzM0MXAyMzQ2Mzk`
+   - Value: `your-kv-rest-api-token-here` (replace with your actual token from Upstash dashboard)
    - ✅ **CHECK** "Contains secret values" (this is a sensitive token!)
 
 5. Click **Save**
