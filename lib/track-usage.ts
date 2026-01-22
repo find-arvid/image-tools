@@ -1,7 +1,7 @@
 /**
  * Track tool usage by calling the API endpoint
  */
-export async function trackToolUsage(tool: 'webo-news-overlay' | 'ccn-image-optimiser') {
+export async function trackToolUsage(tool: 'webo-news-overlay' | 'ccn-image-optimiser' | 'youtube-thumbnail') {
   try {
     const response = await fetch('/api/track-usage', {
       method: 'POST',
