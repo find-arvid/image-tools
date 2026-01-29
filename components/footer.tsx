@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Footer() {
@@ -26,6 +27,12 @@ export default function Footer() {
 
           {/* Right side - Links */}
           <div className="flex flex-row gap-4">
+            <Link href="/admin/images">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                Upload Images
+              </Button>
+            </Link>
             <Link href="/submit-feedback">
               <Button variant="outline">Submit feedback</Button>
             </Link>
