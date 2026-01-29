@@ -173,11 +173,8 @@ export default function YouTubeThumbnail() {
         // Draw text in white text box if provided (middle layer between background and foreground)
         const hasText = textLines.some(line => line.text.trim());
         if (hasText) {
-          // Load Google Font weights before rendering (500 for white, 800 for yellow)
-          await Promise.all([
-            loadGoogleFont('Funnel Display', '500'),
-            loadGoogleFont('Funnel Display', '800'),
-          ]);
+          // Load Google Font weight before rendering (600 semi-bold for all text)
+          await loadGoogleFont('Funnel Display', '600');
           
           ctx.save();
           const fontFamily = '"Funnel Display", Arial, sans-serif';
@@ -216,23 +213,40 @@ export default function YouTubeThumbnail() {
           const textStartY = textBoxY + (textBoxHeight - totalTextHeight) / 2;
           const paddingX = textBoxX + 50; // Padding from left edge
           
-          ctx.lineWidth = 8;
-          
-          // Draw each line with selected color and font weight
+          // Text effects: outline + 3D extrusion (stacked layers)
+          const depthOffset = 12; // Total depth in pixels
+          const outlineWidth = 10;
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = outlineWidth;
+          ctx.lineJoin = 'miter'; // Sharp corners (use 'round' for rounded)
+          ctx.miterLimit = 4;
+
+          // Draw each line: 1) 3D extrusion (stacked layers), 2) outline, 3) fill
           linesToRender.forEach((line, index) => {
-            // Set font weight and color based on selection
-            if (line.color === 'white') {
-              ctx.font = `500 ${fontSize}px ${fontFamily}`; // Medium 500
-              ctx.fillStyle = '#FFFFFF'; // White text
-            } else {
-              ctx.font = `800 ${fontSize}px ${fontFamily}`; // ExtraBold 800
-              ctx.fillStyle = '#FFD700'; // Yellow
-            }
-            
+            ctx.font = `600 ${fontSize}px ${fontFamily}`;
             const y = textStartY + (index * lineHeight);
             const text = line.text.trim();
-            
-            // Draw text without any effects
+
+            // 1) 3D extrusion – draw text in black at small offsets, building a solid “side” of the letters
+            ctx.fillStyle = '#000000';
+            ctx.strokeStyle = '#000000';
+            for (let step = 1; step <= depthOffset; step++) {
+              const ox = paddingX + step;
+              const oy = y + step;
+              ctx.strokeText(text, ox, oy);
+              ctx.fillText(text, ox, oy);
+            }
+
+            // 2) Outline – thick uniform black outline at front
+            ctx.strokeStyle = '#000000';
+            ctx.strokeText(text, paddingX, y);
+
+            // 3) Fill – normal text fill (white or yellow)
+            if (line.color === 'white') {
+              ctx.fillStyle = '#FFFFFF';
+            } else {
+              ctx.fillStyle = '#FFD700';
+            }
             ctx.fillText(text, paddingX, y);
           });
 
@@ -529,13 +543,6 @@ export default function YouTubeThumbnail() {
                         ) : (
                           'Download'
                         )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleReset}
-                      >
-                        Reset
                       </Button>
                     </div>
                   </div>
