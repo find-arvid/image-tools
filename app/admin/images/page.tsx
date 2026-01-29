@@ -412,7 +412,7 @@ export default function AdminImagesPage() {
                     </div>
                   )}
                   <img
-                    src={image.publicUrl}
+                    src={`/api/images/proxy/${image.id}`}
                     alt={image.filename}
                     className="w-full h-32 object-contain rounded border border-border"
                   />

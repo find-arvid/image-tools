@@ -130,10 +130,13 @@ export default function YouTubeThumbnail() {
         }
 
         // Load background image
-        // Note: crossOrigin='anonymous' is required for canvas operations, which means CORS must be configured on R2
+        // Note: crossOrigin='anonymous' is only needed for external URLs (R2 direct), not for same-origin proxy URLs
         const backgroundImg = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new Image();
-          img.crossOrigin = 'anonymous';
+          // Only set crossOrigin for external URLs (http/https), not for same-origin proxy URLs
+          if (bg.path.startsWith('http://') || bg.path.startsWith('https://')) {
+            img.crossOrigin = 'anonymous';
+          }
           img.onload = () => resolve(img);
           img.onerror = (error) => {
             const errorDetails: any = {
@@ -237,32 +240,81 @@ export default function YouTubeThumbnail() {
         }
 
         // Draw foreground - use selected or first available (top layer)
+        // Make foreground optional - if it fails to load, continue without it
         const fg = selectedForeground || (availableForegrounds.length > 0 ? availableForegrounds[0] : null);
         if (fg) {
+          // Validate foreground path - allow absolute URLs (http/https) or relative paths (/api/...)
           if (!fg.path) {
-            console.warn('Foreground image path is missing, skipping foreground:', fg);
-          } else {
-            const foregroundImg = await new Promise<HTMLImageElement>((resolve, reject) => {
-              const img = new Image();
-              img.crossOrigin = 'anonymous';
-              img.onload = () => resolve(img);
-              img.onerror = (error) => {
-                const errorDetails: any = {
-                  path: fg.path,
-                  error,
-                };
-                if (error instanceof Event) {
-                  errorDetails.errorType = error.type;
-                  errorDetails.errorTarget = error.target;
-                }
-                console.error('Failed to load foreground image:', errorDetails);
-                reject(new Error(`Failed to load foreground image from ${fg.path}. This is likely a CORS issue. Please configure CORS on your Cloudflare R2 bucket to allow your domain.`));
-              };
-              img.src = fg.path;
+            console.warn('Foreground image path is missing, skipping foreground:', {
+              id: fg.id,
+              name: fg.name,
+              foreground: fg,
             });
+          } else if (!fg.path.startsWith('http://') && !fg.path.startsWith('https://') && !fg.path.startsWith('/')) {
+            console.warn('Foreground image has invalid URL format, skipping:', {
+              id: fg.id,
+              name: fg.name,
+              path: fg.path,
+            });
+          } else {
+            try {
+              console.log('Loading foreground image:', {
+                id: fg.id,
+                name: fg.name,
+                path: fg.path,
+              });
+              
+              const foregroundImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+                const img = new Image();
+                // Only set crossOrigin for external URLs (http/https), not for same-origin proxy URLs
+                if (fg.path.startsWith('http://') || fg.path.startsWith('https://')) {
+                  img.crossOrigin = 'anonymous';
+                }
+                
+                // Set timeout to detect stuck loads
+                const timeout = setTimeout(() => {
+                  console.error('Foreground image load timeout:', fg.path);
+                  reject(new Error(`Timeout loading foreground image from ${fg.path}`));
+                }, 10000); // 10 second timeout
+                
+                img.onload = () => {
+                  clearTimeout(timeout);
+                  console.log('Foreground image loaded successfully:', fg.path);
+                  resolve(img);
+                };
+                
+                img.onerror = (error) => {
+                  clearTimeout(timeout);
+                  const errorDetails: any = {
+                    id: fg.id,
+                    name: fg.name,
+                    path: fg.path,
+                    error,
+                  };
+                  if (error instanceof Event) {
+                    errorDetails.errorType = error.type;
+                    errorDetails.errorTarget = error.target;
+                  }
+                  console.error('Failed to load foreground image:', errorDetails);
+                  reject(new Error(`Failed to load foreground image from ${fg.path}. Check if the image exists in R2 and CORS is configured.`));
+                };
+                
+                img.src = fg.path;
+              });
 
-            // Overlay foreground at same size as background (1:1 overlay)
-            ctx.drawImage(foregroundImg, 0, 0, targetWidth, targetHeight);
+              // Overlay foreground at same size as background (1:1 overlay)
+              ctx.drawImage(foregroundImg, 0, 0, targetWidth, targetHeight);
+              console.log('Foreground image drawn successfully');
+            } catch (foregroundError) {
+              // Log the error but continue generating preview without foreground
+              console.warn('Skipping foreground image due to error:', {
+                id: fg.id,
+                name: fg.name,
+                path: fg.path,
+                error: foregroundError instanceof Error ? foregroundError.message : String(foregroundError),
+              });
+              // Continue without foreground - preview will show background + text only
+            }
           }
         }
 

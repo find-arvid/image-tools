@@ -7,12 +7,17 @@ import type { ImageMetadata } from './image-database';
 
 /**
  * Convert ImageMetadata to ForegroundAsset format
+ * Uses proxy URL to avoid CORS issues
  */
 export function imageToForegroundAsset(image: ImageMetadata): ForegroundAsset {
+  // Use proxy URL instead of direct R2 URL to avoid CORS
+  // Use path parameter instead of query string for Next.js Image compatibility
+  const proxyUrl = `/api/images/proxy/${image.id}`;
+  
   return {
     id: image.id,
     name: image.emotions[0] || 'Untitled', // Use first emotion as name
-    path: image.publicUrl,
+    path: proxyUrl,
     category: image.category,
     emotions: image.emotions,
   };
@@ -20,12 +25,17 @@ export function imageToForegroundAsset(image: ImageMetadata): ForegroundAsset {
 
 /**
  * Convert ImageMetadata to BackgroundAsset format
+ * Uses proxy URL to avoid CORS issues
  */
 export function imageToBackgroundAsset(image: ImageMetadata): BackgroundAsset {
+  // Use proxy URL instead of direct R2 URL to avoid CORS
+  // Use path parameter instead of query string for Next.js Image compatibility
+  const proxyUrl = `/api/images/proxy/${image.id}`;
+  
   return {
     id: image.id,
     name: image.category || image.filename.replace(/\.[^/.]+$/, ''), // Use category or filename without extension
-    path: image.publicUrl,
+    path: proxyUrl,
     category: image.category,
   };
 }
