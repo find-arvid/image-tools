@@ -6,7 +6,7 @@ import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import Link from 'next/link';
-import { BACKGROUNDS, FOREGROUNDS, type BackgroundAsset, type ForegroundAsset } from '@/lib/youtube-thumbnail-assets';
+import { type BackgroundAsset, type ForegroundAsset } from '@/lib/youtube-thumbnail-assets';
 import { trackToolUsage } from '@/lib/track-usage';
 import { fetchForegroundImages, fetchBackgroundImages } from '@/lib/fetch-images';
 
@@ -56,9 +56,9 @@ const loadGoogleFont = async (fontFamily: string, fontWeight: string = '700'): P
 };
 
 export default function YouTubeThumbnail() {
-  // State for available images (from database, fallback to static)
-  const [availableBackgrounds, setAvailableBackgrounds] = useState<BackgroundAsset[]>(BACKGROUNDS);
-  const [availableForegrounds, setAvailableForegrounds] = useState<ForegroundAsset[]>(FOREGROUNDS);
+  // State for available images (from database only)
+  const [availableBackgrounds, setAvailableBackgrounds] = useState<BackgroundAsset[]>([]);
+  const [availableForegrounds, setAvailableForegrounds] = useState<ForegroundAsset[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
   const [selectedBackground, setSelectedBackground] = useState<BackgroundAsset | null>(null);
@@ -88,33 +88,19 @@ export default function YouTubeThumbnail() {
         console.log('Fetched foregrounds:', foregrounds.length, foregrounds);
         console.log('Fetched backgrounds:', backgrounds.length, backgrounds);
 
-        // Use database images if available, otherwise fallback to static
-        if (foregrounds.length > 0) {
-          console.log('Using database foregrounds');
-          setAvailableForegrounds(foregrounds);
-          setSelectedForeground(foregrounds[0] || null);
-        } else {
-          console.log('No database foregrounds, using static');
-          setAvailableForegrounds(FOREGROUNDS);
-          setSelectedForeground(FOREGROUNDS[0] || null);
-        }
+        // Use database images only (no fallback to static)
+        setAvailableForegrounds(foregrounds);
+        setSelectedForeground(foregrounds[0] || null);
 
-        if (backgrounds.length > 0) {
-          console.log('Using database backgrounds');
-          setAvailableBackgrounds(backgrounds);
-          setSelectedBackground(backgrounds[0] || null);
-        } else {
-          console.log('No database backgrounds, using static');
-          setAvailableBackgrounds(BACKGROUNDS);
-          setSelectedBackground(BACKGROUNDS[0] || null);
-        }
+        setAvailableBackgrounds(backgrounds);
+        setSelectedBackground(backgrounds[0] || null);
       } catch (error) {
         console.error('Error loading images:', error);
-        // Fallback to static images
-        setAvailableForegrounds(FOREGROUNDS);
-        setAvailableBackgrounds(BACKGROUNDS);
-        setSelectedForeground(FOREGROUNDS[0] || null);
-        setSelectedBackground(BACKGROUNDS[0] || null);
+        // Don't fallback to static images - just use empty arrays
+        setAvailableForegrounds([]);
+        setAvailableBackgrounds([]);
+        setSelectedForeground(null);
+        setSelectedBackground(null);
       } finally {
         setImagesLoaded(true);
       }
@@ -128,8 +114,9 @@ export default function YouTubeThumbnail() {
     if (!imagesLoaded) return; // Wait for images to load
 
     const generatePreview = async () => {
-      // Always use default background if none selected
-      const bg = selectedBackground || availableBackgrounds[0];
+      // Use selected background or first available, or skip if none
+      const bg = selectedBackground || (availableBackgrounds.length > 0 ? availableBackgrounds[0] : null);
+      if (!bg) return; // Skip preview if no backgrounds available
       if (!bg) {
         setCombinedPreview(null);
         return;
@@ -233,8 +220,8 @@ export default function YouTubeThumbnail() {
           ctx.restore();
         }
 
-        // Draw foreground - always use default if none selected (top layer)
-        const fg = selectedForeground || availableForegrounds[0];
+        // Draw foreground - use selected or first available (top layer)
+        const fg = selectedForeground || (availableForegrounds.length > 0 ? availableForegrounds[0] : null);
         if (fg) {
           const foregroundImg = await new Promise<HTMLImageElement>((resolve, reject) => {
             const img = new Image();
@@ -302,8 +289,12 @@ export default function YouTubeThumbnail() {
   }, [combinedPreview, textLines]);
 
   const handleReset = () => {
-    setSelectedBackground(availableBackgrounds[0] || null);
-    setSelectedForeground(availableForegrounds[0] || null);
+    if (availableBackgrounds.length > 0) {
+      setSelectedBackground(availableBackgrounds[0]);
+    }
+    if (availableForegrounds.length > 0) {
+      setSelectedForeground(availableForegrounds[0]);
+    }
     setTextLines([{ text: '', color: 'white' }]);
     setCombinedPreview(null);
     setDownloaded(false);
