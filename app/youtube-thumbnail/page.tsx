@@ -116,7 +116,6 @@ export default function YouTubeThumbnail() {
     const generatePreview = async () => {
       // Use selected background or first available, or skip if none
       const bg = selectedBackground || (availableBackgrounds.length > 0 ? availableBackgrounds[0] : null);
-      if (!bg) return; // Skip preview if no backgrounds available
       if (!bg) {
         setCombinedPreview(null);
         return;
@@ -125,12 +124,29 @@ export default function YouTubeThumbnail() {
       setIsGenerating(true);
 
       try {
+        // Validate background path
+        if (!bg.path) {
+          throw new Error(`Background image path is missing. Background: ${JSON.stringify(bg)}`);
+        }
+
         // Load background image
+        // Note: crossOrigin='anonymous' is required for canvas operations, which means CORS must be configured on R2
         const backgroundImg = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new Image();
           img.crossOrigin = 'anonymous';
           img.onload = () => resolve(img);
-          img.onerror = reject;
+          img.onerror = (error) => {
+            const errorDetails: any = {
+              path: bg.path,
+              error,
+            };
+            if (error instanceof Event) {
+              errorDetails.errorType = error.type;
+              errorDetails.errorTarget = error.target;
+            }
+            console.error('Failed to load background image:', errorDetails);
+            reject(new Error(`Failed to load background image from ${bg.path}. This is likely a CORS issue. Please configure CORS on your Cloudflare R2 bucket to allow your domain.`));
+          };
           img.src = bg.path;
         });
 
@@ -223,16 +239,31 @@ export default function YouTubeThumbnail() {
         // Draw foreground - use selected or first available (top layer)
         const fg = selectedForeground || (availableForegrounds.length > 0 ? availableForegrounds[0] : null);
         if (fg) {
-          const foregroundImg = await new Promise<HTMLImageElement>((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-            img.src = fg.path;
-          });
+          if (!fg.path) {
+            console.warn('Foreground image path is missing, skipping foreground:', fg);
+          } else {
+            const foregroundImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = 'anonymous';
+              img.onload = () => resolve(img);
+              img.onerror = (error) => {
+                const errorDetails: any = {
+                  path: fg.path,
+                  error,
+                };
+                if (error instanceof Event) {
+                  errorDetails.errorType = error.type;
+                  errorDetails.errorTarget = error.target;
+                }
+                console.error('Failed to load foreground image:', errorDetails);
+                reject(new Error(`Failed to load foreground image from ${fg.path}. This is likely a CORS issue. Please configure CORS on your Cloudflare R2 bucket to allow your domain.`));
+              };
+              img.src = fg.path;
+            });
 
-          // Overlay foreground at same size as background (1:1 overlay)
-          ctx.drawImage(foregroundImg, 0, 0, targetWidth, targetHeight);
+            // Overlay foreground at same size as background (1:1 overlay)
+            ctx.drawImage(foregroundImg, 0, 0, targetWidth, targetHeight);
+          }
         }
 
         // Convert to data URL
@@ -246,7 +277,16 @@ export default function YouTubeThumbnail() {
           }, 100);
         }
       } catch (error) {
-        console.error('Error generating preview:', error);
+        console.error('Error generating preview:', {
+          error,
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+          selectedBackground: selectedBackground?.path,
+          selectedForeground: selectedForeground?.path,
+          availableBackgrounds: availableBackgrounds.length,
+          availableForegrounds: availableForegrounds.length,
+        });
+        setCombinedPreview(null);
       } finally {
         setIsGenerating(false);
       }
