@@ -39,7 +39,7 @@ export default function Home() {
         </div>
         
         {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 [&>*:first-child:hover]:scale-[1.02] [&>*:first-child:hover~*]:scale-[0.98] [&:has(>*:last-child:hover)>*:last-child]:scale-[1.02] [&:has(>*:last-child:hover)>*:first-child]:scale-[0.98]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 [&>*]:transition-transform [&>*]:duration-300 [&:has(>*:hover)>*]:scale-[0.98] [&>*:hover]:scale-[1.02]">
           <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-white/20">
             <div className="px-0">
               <Image
