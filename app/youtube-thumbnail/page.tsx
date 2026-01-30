@@ -181,11 +181,12 @@ export default function YouTubeThumbnail() {
           ctx.textAlign = 'left';
           ctx.textBaseline = 'top';
           
-          // Define text box area (left side of thumbnail) - transparent holder
+          // Define text box area (left side of thumbnail) - aligned with W logo at bottom-left
           // Text box takes up 40% width and 70% height, positioned slightly below top
           const textBoxWidth = targetWidth * 0.4; // 40% of width (left portion)
           const textBoxHeight = targetHeight * 0.7; // 70% of height
-          const textBoxX = 0;
+          const logoLeftOffset = 60; // Left edge aligned with W logo (px)
+          const textBoxX = logoLeftOffset;
           const textBoxY = targetHeight * 0.05; // Lowered by 5% of image height
           
           // Filter out empty lines and limit to 4 lines
@@ -209,13 +210,13 @@ export default function YouTubeThumbnail() {
           // Calculate total text height
           const totalTextHeight = numLines * lineHeight;
           
-          // Center text vertically within the text box area
-          const textStartY = textBoxY + (textBoxHeight - totalTextHeight) / 2;
-          const paddingX = textBoxX + 50; // Padding from left edge
+          // Align text to the top of the text box; same left edge as W logo
+          const textStartY = textBoxY;
+          const paddingX = textBoxX; // Aligned with W logo (no extra indent)
           
           // Text effects: outline + 3D extrusion (stacked layers)
-          const depthOffset = 12; // Total depth in pixels
-          const outlineWidth = 10;
+          const depthOffset = 8; // Total depth in pixels (each layer = 1px offset)
+          const outlineWidth = 12;
           ctx.strokeStyle = '#000000';
           ctx.lineWidth = outlineWidth;
           ctx.lineJoin = 'miter'; // Sharp corners (use 'round' for rounded)
@@ -332,8 +333,8 @@ export default function YouTubeThumbnail() {
           }
         }
 
-        // Convert to data URL
-        const dataUrl = canvas.toDataURL('image/webp', 0.9);
+        // Convert to data URL (PNG, lossless – no quality setting)
+        const dataUrl = canvas.toDataURL('image/png');
         setCombinedPreview(dataUrl);
 
         // Scroll to preview when it's ready
@@ -378,7 +379,7 @@ export default function YouTubeThumbnail() {
 
     const link = document.createElement('a');
     link.href = combinedPreview;
-    link.download = `${filename}.webp`;
+    link.download = `${filename}.png`;
     
     document.body.appendChild(link);
     link.click();

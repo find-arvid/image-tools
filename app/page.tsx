@@ -135,11 +135,9 @@ export default function Home() {
               </div>
             </CardContent>
             <CardFooter className="text-left mt-auto pt-0 px-0">
-              <Link href="/youtube-thumbnail" className="w-full">
-                <Button className="w-full">
-                  Create YouTube thumbnail
-                </Button>
-              </Link>
+              <Button className="w-full" disabled>
+                Coming soon
+              </Button>
             </CardFooter>
           </Card>
         </div>
