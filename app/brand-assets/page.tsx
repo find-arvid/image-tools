@@ -146,7 +146,7 @@ function BrandAssetsContent() {
                 </tr>
               </thead>
               <tbody>
-                {assetsByType.logo.map((logo) => {
+                {assetsByType.logo.map((logo, index) => {
                   const dim = dimensions[logo.id];
                   const res =
                     dim?.width && dim.height
@@ -155,7 +155,7 @@ function BrandAssetsContent() {
                       ? `${logo.width} × ${logo.height}`
                       : '—';
                   return (
-                    <tr key={logo.id} className="border-t border-border/60">
+                    <tr key={`${logo.id}-${index}`} className="border-t border-border/60">
                       <td className="px-3 py-2 align-middle">
                         {logo.publicUrl && (
                           <div className="h-10 w-20 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
@@ -329,7 +329,7 @@ function BrandAssetsContent() {
                 </tr>
               </thead>
               <tbody>
-                {[...assetsByType.icon, ...assetsByType['project-logo']].map((asset) => {
+                {[...assetsByType.icon, ...assetsByType['project-logo']].map((asset, index) => {
                   const dim = dimensions[asset.id];
                   const res =
                     dim?.width && dim.height
@@ -338,7 +338,7 @@ function BrandAssetsContent() {
                       ? `${asset.width} × ${asset.height}`
                       : '—';
                   return (
-                    <tr key={asset.id} className="border-t border-border/60">
+                    <tr key={`${asset.id}-${index}`} className="border-t border-border/60">
                       <td className="px-3 py-2 align-middle">
                         {asset.publicUrl && (
                           <div className="h-10 w-10 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">

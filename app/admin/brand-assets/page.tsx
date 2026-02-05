@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BrandAsset, BrandAssetType } from '@/lib/brand-assets-database';
 
@@ -28,6 +28,9 @@ export default function AdminBrandAssetsPage() {
   const [colorName, setColorName] = useState('');
   const [colorHex, setColorHex] = useState('#cfe02d');
   const [colorUsage, setColorUsage] = useState('');
+  const [editingColorId, setEditingColorId] = useState<string | null>(null);
+  const [colorToDelete, setColorToDelete] = useState<BrandAsset | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   // Font form
   const [fontName, setFontName] = useState('');
   const [fontUsage, setFontUsage] = useState('');
@@ -66,6 +69,22 @@ export default function AdminBrandAssetsPage() {
   useEffect(() => {
     loadAssets();
   }, [selectedBrand]);
+
+  // Populate colour form when editing
+  useEffect(() => {
+    if (editingColorId) {
+      const color = assets.find(a => a.type === 'color' && a.id === editingColorId);
+      if (color) {
+        setColorName(color.name);
+        setColorHex(color.hex || '#000000');
+        setColorUsage(color.usage || '');
+      }
+    } else {
+      setColorName('');
+      setColorHex('#cfe02d');
+      setColorUsage('');
+    }
+  }, [editingColorId, assets]);
 
   const handleFileUpload = async () => {
     if (!selectedFile) return;
@@ -116,36 +135,62 @@ export default function AdminBrandAssetsPage() {
       setUploading(true);
       setError(null);
 
-      const res = await fetch('/api/brand-assets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'color',
-          name: colorName.trim(),
-          hex: colorHex.trim(),
-          usage: colorUsage.trim() || undefined,
-          brand: selectedBrand,
-        }),
-      });
+      const payload = {
+        name: colorName.trim(),
+        hex: colorHex.trim(),
+        usage: colorUsage.trim() || undefined,
+      };
+
+      const res = editingColorId
+        ? await fetch(`/api/brand-assets/${editingColorId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+        : await fetch('/api/brand-assets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'color',
+              brand: selectedBrand,
+              ...payload,
+            }),
+          });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || body.details || `Failed to create colour: ${res.status}`);
+        throw new Error(body.error || body.details || `Failed to ${editingColorId ? 'update' : 'create'} colour: ${res.status}`);
       }
 
-      // Refresh list
       await loadAssets();
-
-      // Reset form
       setColorName('');
       setColorUsage('');
+      setEditingColorId(null);
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'Failed to create colour');
+      setError(err instanceof Error ? err.message : `Failed to ${editingColorId ? 'update' : 'create'} colour`);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleDeleteColor = async () => {
+    if (!colorToDelete) return;
+    try {
+      setIsDeleting(true);
+      setError(null);
+      const res = await fetch(`/api/brand-assets/${colorToDelete.id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 404) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || body.details || `Delete failed: ${res.status}`);
+      }
+      await loadAssets();
+      setColorToDelete(null);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to delete colour');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -484,13 +529,24 @@ export default function AdminBrandAssetsPage() {
                 placeholder="Optional: where to use this colour"
               />
             </div>
-            <Button
-              type="button"
-              onClick={handleCreateColor}
-              disabled={!colorName.trim() || !colorHex.trim() || uploading}
-            >
-              Add colour
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                onClick={handleCreateColor}
+                disabled={!colorName.trim() || !colorHex.trim() || uploading}
+              >
+                {editingColorId ? 'Save changes' : 'Add colour'}
+              </Button>
+              {editingColorId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingColorId(null)}
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="md:col-span-2 space-y-3">
@@ -502,7 +558,12 @@ export default function AdminBrandAssetsPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {colors.map(color => (
-                  <div key={color.id} className="border border-border rounded-md p-2 flex flex-col gap-2 bg-background/40">
+                  <div
+                    key={color.id}
+                    className={`border rounded-md p-2 flex flex-col gap-2 bg-background/40 ${
+                      editingColorId === color.id ? 'border-primary ring-1 ring-primary' : 'border-border'
+                    }`}
+                  >
                     <div className="h-10 w-full rounded-sm" style={{ backgroundColor: color.hex || '#000000' }} />
                     <div className="space-y-0.5">
                       <p className="text-xs font-medium text-white">{color.name}</p>
@@ -511,6 +572,28 @@ export default function AdminBrandAssetsPage() {
                         <p className="text-[11px] text-muted-foreground line-clamp-2">{color.usage}</p>
                       )}
                     </div>
+                    <div className="flex gap-1 mt-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={() => setEditingColorId(color.id)}
+                        disabled={!!editingColorId && editingColorId !== color.id}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-destructive hover:text-destructive"
+                        onClick={() => setColorToDelete(color)}
+                        disabled={!!editingColorId}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -518,6 +601,44 @@ export default function AdminBrandAssetsPage() {
           </div>
         </div>
       </section>
+
+      {/* Delete colour confirmation modal */}
+      {colorToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full space-y-4">
+            <h3 className="text-lg font-semibold">Delete colour</h3>
+            <p className="text-muted-foreground">
+              Are you sure you want to delete <span className="font-medium">{colorToDelete.name}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setColorToDelete(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteColor}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Simple overview of latest logos */}
       <section className="space-y-3">

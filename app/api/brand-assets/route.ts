@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       type: body.type,
       name: body.name,
       description: body.description,
+      brand: body.brand || 'find',
       r2Key: body.r2Key,
       publicUrl: body.publicUrl,
       format: body.format,
