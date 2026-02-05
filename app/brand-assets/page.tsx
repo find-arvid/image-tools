@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type SyntheticEvent } from 'react';
+import { Suspense, useEffect, useState, type SyntheticEvent } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Copy } from 'lucide-react';
@@ -19,7 +19,7 @@ const initialSections: SectionedAssets = {
 
 const BRANDS = ['find.co', 'Webopedia', 'CCN', 'CryptoManiaks'] as const;
 
-export default function BrandAssetsPage() {
+function BrandAssetsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const urlBrand = (searchParams.get('brand') || 'find').toLowerCase();
@@ -390,3 +390,10 @@ export default function BrandAssetsPage() {
   );
 }
 
+export default function BrandAssetsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen w-full max-w-6xl mx-auto px-4 py-10 text-muted-foreground">Loading…</div>}>
+      <BrandAssetsContent />
+    </Suspense>
+  );
+}
