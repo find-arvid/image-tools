@@ -2,6 +2,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function Footer() {
   return (
@@ -26,18 +34,37 @@ export default function Footer() {
           </div>
 
           {/* Right side - Links */}
-          <div className="flex flex-row gap-4">
-            <Link href="/admin/images">
-              <Button variant="outline" className="flex items-center gap-2">
-                <Upload className="w-4 h-4" />
-                Upload Images
-              </Button>
-            </Link>
+          <div className="flex flex-row flex-wrap gap-3 items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  Admin tools
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Admin tools</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <Link href="/admin/images">
+                  <DropdownMenuItem asChild>
+                    <span>Upload images</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link href="/admin/brand-assets">
+                  <DropdownMenuItem asChild>
+                    <span>Brand assets admin</span>
+                  </DropdownMenuItem>
+                </Link>
+                <Link href="/statistics">
+                  <DropdownMenuItem asChild>
+                    <span>Statistics</span>
+                  </DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Link href="/submit-feedback">
               <Button variant="outline">Submit feedback</Button>
-            </Link>
-            <Link href="/statistics">
-              <Button variant="ghost">Statistics</Button>
             </Link>
           </div>
         </div>

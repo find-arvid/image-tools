@@ -9,6 +9,15 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
 } from '@/components/ui/navigation-menu';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -21,6 +30,7 @@ export default function Navigation() {
 
   return (
     <nav className="border-b border-border bg-background relative">
+      {/* Logo - left */}
       <Link href="/" className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex items-center">
         <Image
           src="/Find-co-logo-green.svg"
@@ -31,6 +41,7 @@ export default function Navigation() {
         />
       </Link>
       <div className="container mx-auto px-4 flex items-center h-16 relative">
+        {/* Centered navigation menu */}
         <div className="absolute left-1/2 -translate-x-1/2">
           <NavigationMenu viewport={false}>
             <NavigationMenuList>
@@ -48,6 +59,35 @@ export default function Navigation() {
               })}
             </NavigationMenuList>
           </NavigationMenu>
+        </div>
+
+        {/* Brand assets dropdown - right */}
+        <div className="ml-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                Brand assets
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Brands</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <Link href="/brand-assets?brand=find">
+                <DropdownMenuItem asChild>
+                  <span>Find.co</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem disabled>
+                Webopedia (coming soon)
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                CCN (coming soon)
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                CryptoManiaks (coming soon)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </nav>

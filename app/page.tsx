@@ -20,7 +20,15 @@ export default function Home() {
       <div className="flex flex-col items-center justify-center px-4 pt-16 pb-24 relative z-0">
       <div className="text-center max-w-[940px] w-full space-y-16">
         {/* Header Section */}
-        <div className="flex flex-col items-center gap-6 text-left w-full">
+        <div className="flex flex-col items-center gap-6 text-left w-full relative">
+          {/* Top-right brand assets link */}
+          <div className="absolute right-0 -top-10 hidden md:flex">
+            <Link href="/brand-assets">
+              <Button variant="outline" size="sm">
+                Brand assets
+              </Button>
+            </Link>
+          </div>
           {/* Small informational text */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full inline-flex">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
