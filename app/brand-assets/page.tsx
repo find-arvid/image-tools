@@ -49,7 +49,10 @@ function BrandAssetsContent() {
         }
         const data = await res.json();
         const sections: SectionedAssets = { ...initialSections };
+        const seenIds = new Set<string>();
         (data.assets as BrandAsset[]).forEach(asset => {
+          if (seenIds.has(asset.id)) return;
+          seenIds.add(asset.id);
           sections[asset.type].push(asset);
         });
         setAssetsByType(sections);
@@ -272,12 +275,12 @@ function BrandAssetsContent() {
           <p className="text-muted-foreground text-sm">No colours added yet.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {assetsByType.color.map(color => {
+            {assetsByType.color.map((color, index) => {
               const hex = color.hex || '#000000';
               const isCopied = copiedHex === hex;
               return (
                 <div
-                  key={color.id}
+                  key={`${color.id}-${index}`}
                   role="button"
                   tabIndex={0}
                   className="relative border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 cursor-pointer hover:border-muted-foreground/30 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
@@ -344,8 +347,8 @@ function BrandAssetsContent() {
           <p className="text-muted-foreground text-sm">No fonts added yet.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {assetsByType.font.map(font => (
-              <div key={font.id} className="border border-border rounded-lg p-4 bg-card/60 space-y-2">
+            {assetsByType.font.map((font, index) => (
+              <div key={`${font.id}-${index}`} className="border border-border rounded-lg p-4 bg-card/60 space-y-2">
                 <p className="font-semibold text-sm text-white">{font.name}</p>
                 {font.usage && (
                   <p className="text-xs text-muted-foreground">{font.usage}</p>
