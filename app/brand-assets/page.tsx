@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { BrandAsset, BrandAssetType } from '@/lib/brand-assets-database';
 
 type SectionedAssets = Record<BrandAssetType, BrandAsset[]>;
@@ -118,10 +119,6 @@ function BrandAssetsContent() {
         </div>
       </header>
 
-      {loading && (
-        <p className="text-muted-foreground">Loading brand assets…</p>
-      )}
-
       {error && (
         <p className="text-sm text-red-400">Error: {error}</p>
       )}
@@ -129,7 +126,51 @@ function BrandAssetsContent() {
       {/* Logos */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-white">Logos</h2>
-        {assetsByType.logo.length === 0 ? (
+        {loading ? (
+          <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+            <table className="min-w-full text-sm">
+              <thead className="bg-muted/40">
+                <tr className="text-left">
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Preview</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Name</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Format</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Resolution</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">File size</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Variants</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground text-right">Download</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3].map((i) => (
+                  <tr key={i} className="border-t border-border/60">
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-10 w-20" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="mt-1 h-3 w-24" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-3 w-12" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-3 w-16" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-3 w-10" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-3 w-20" />
+                    </td>
+                    <td className="px-3 py-2 align-middle text-right">
+                      <Skeleton className="h-8 w-20 ml-auto" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : assetsByType.logo.length === 0 ? (
           <p className="text-muted-foreground text-sm">No logos added yet.</p>
         ) : (
           <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
@@ -214,7 +255,20 @@ function BrandAssetsContent() {
       {/* Colours */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-white">Colours</h2>
-        {assetsByType.color.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3">
+                <Skeleton className="h-16 w-full rounded-md" />
+                <div className="space-y-1 pr-8">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : assetsByType.color.length === 0 ? (
           <p className="text-muted-foreground text-sm">No colours added yet.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -272,7 +326,21 @@ function BrandAssetsContent() {
       {/* Fonts */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-white">Fonts</h2>
-        {assetsByType.font.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="border border-border rounded-lg p-4 bg-card/60 space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+                <div className="flex gap-2 mt-2">
+                  <Skeleton className="h-8 w-28" />
+                  <Skeleton className="h-8 w-32" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : assetsByType.font.length === 0 ? (
           <p className="text-muted-foreground text-sm">No fonts added yet.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,7 +380,50 @@ function BrandAssetsContent() {
       {/* Icons / Project logos */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-white">Icons &amp; Project Logos</h2>
-        {assetsByType.icon.length === 0 && assetsByType['project-logo'].length === 0 ? (
+        {loading ? (
+          <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+            <table className="min-w-full text-sm">
+              <thead className="bg-muted/40">
+                <tr className="text-left">
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Preview</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Name</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Type</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Resolution</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">File size</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Tags</th>
+                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground text-right">Download</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[1, 2, 3, 4].map((i) => (
+                  <tr key={i} className="border-t border-border/60">
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-10 w-10" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-4 w-24" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-3 w-16" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-3 w-16" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-3 w-10" />
+                    </td>
+                    <td className="px-3 py-2 align-middle">
+                      <Skeleton className="h-3 w-20" />
+                    </td>
+                    <td className="px-3 py-2 align-middle text-right">
+                      <Skeleton className="h-8 w-20 ml-auto" />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : assetsByType.icon.length === 0 && assetsByType['project-logo'].length === 0 ? (
           <p className="text-muted-foreground text-sm">No icons or project logos added yet.</p>
         ) : (
           <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
@@ -390,9 +501,48 @@ function BrandAssetsContent() {
   );
 }
 
+function BrandAssetsSkeleton() {
+  return (
+    <main className="min-h-screen w-full max-w-6xl mx-auto px-4 py-10 space-y-12">
+      <header className="space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="space-y-2">
+            <Skeleton className="h-9 w-48" />
+            <Skeleton className="h-4 w-full max-w-2xl" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-9 w-28" />
+          </div>
+        </div>
+      </header>
+      <section className="space-y-4">
+        <Skeleton className="h-6 w-16" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </section>
+      <section className="space-y-4">
+        <Skeleton className="h-6 w-20" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-32 rounded-lg" />
+          ))}
+        </div>
+      </section>
+      <section className="space-y-4">
+        <Skeleton className="h-6 w-16" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export default function BrandAssetsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen w-full max-w-6xl mx-auto px-4 py-10 text-muted-foreground">Loading…</div>}>
+    <Suspense fallback={<BrandAssetsSkeleton />}>
       <BrandAssetsContent />
     </Suspense>
   );
