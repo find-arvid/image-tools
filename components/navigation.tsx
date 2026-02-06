@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -21,6 +22,8 @@ import {
 
 export default function Navigation() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const navItems = [
     { label: 'All tools', href: '/' },
@@ -43,31 +46,39 @@ export default function Navigation() {
 
       {/* Brand assets - right, 16px from edge (same as logo) */}
       <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        {mounted ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                Brand assets
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Brands</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <Link href="/brand-assets?brand=find">
+                <DropdownMenuItem asChild>
+                  <span>Find.co</span>
+                </DropdownMenuItem>
+              </Link>
+              <DropdownMenuItem disabled>
+                Webopedia (coming soon)
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                CCN (coming soon)
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                CryptoManiaks (coming soon)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link href="/brand-assets?brand=find">
             <Button variant="outline" size="sm">
               Brand assets
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Brands</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <Link href="/brand-assets?brand=find">
-              <DropdownMenuItem asChild>
-                <span>Find.co</span>
-              </DropdownMenuItem>
-            </Link>
-            <DropdownMenuItem disabled>
-              Webopedia (coming soon)
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled>
-              CCN (coming soon)
-            </DropdownMenuItem>
-            <DropdownMenuItem disabled>
-              CryptoManiaks (coming soon)
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </Link>
+        )}
       </div>
 
       <div className="container mx-auto px-4 flex items-center h-16 relative">

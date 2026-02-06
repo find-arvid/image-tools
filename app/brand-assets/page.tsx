@@ -48,7 +48,15 @@ function BrandAssetsContent() {
           throw new Error(`Failed to load brand assets: ${res.status} ${res.statusText}`);
         }
         const data = await res.json();
-        const sections: SectionedAssets = { ...initialSections };
+        // Build fresh section buckets each time to avoid accumulating
+        // items across React Strict Mode double-invocations in dev.
+        const sections: SectionedAssets = {
+          logo: [],
+          color: [],
+          font: [],
+          icon: [],
+          'project-logo': [],
+        };
         const seenIds = new Set<string>();
         (data.assets as BrandAsset[]).forEach(asset => {
           if (seenIds.has(asset.id)) return;
@@ -362,7 +370,7 @@ function BrandAssetsContent() {
                   {font.googleFontUrl && (
                     <Button asChild size="sm" variant="outline">
                       <a href={font.googleFontUrl} target="_blank" rel="noreferrer">
-                        View on Google Fonts
+                        View font page
                       </a>
                     </Button>
                   )}

@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Upload } from 'lucide-react';
@@ -12,6 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function Footer() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   return (
     <footer className="border-t border-border bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -35,33 +41,42 @@ export default function Footer() {
 
           {/* Right side - Links */}
           <div className="flex flex-row flex-wrap gap-3 items-center">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            {mounted ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Upload className="w-4 h-4" />
+                    Admin tools
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Admin tools</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <Link href="/admin/images">
+                    <DropdownMenuItem asChild>
+                      <span>Upload images</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/admin/brand-assets">
+                    <DropdownMenuItem asChild>
+                      <span>Brand assets admin</span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/statistics">
+                    <DropdownMenuItem asChild>
+                      <span>Statistics</span>
+                    </DropdownMenuItem>
+                  </Link>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/admin/images">
                 <Button variant="outline" className="flex items-center gap-2">
                   <Upload className="w-4 h-4" />
                   Admin tools
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Admin tools</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <Link href="/admin/images">
-                  <DropdownMenuItem asChild>
-                    <span>Upload images</span>
-                  </DropdownMenuItem>
-                </Link>
-                <Link href="/admin/brand-assets">
-                  <DropdownMenuItem asChild>
-                    <span>Brand assets admin</span>
-                  </DropdownMenuItem>
-                </Link>
-                <Link href="/statistics">
-                  <DropdownMenuItem asChild>
-                    <span>Statistics</span>
-                  </DropdownMenuItem>
-                </Link>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </Link>
+            )}
 
             <Link href="/submit-feedback">
               <Button variant="outline">Submit feedback</Button>

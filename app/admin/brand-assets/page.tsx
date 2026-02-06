@@ -413,13 +413,13 @@ export default function AdminBrandAssetsPage() {
             </div>
             <div className="space-y-1">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Google Fonts URL
+                Font reference URL
               </label>
               <input
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                 value={fontGoogleUrl}
                 onChange={(e) => setFontGoogleUrl(e.target.value)}
-                placeholder="https://fonts.google.com/specimen/Space+Grotesk"
+                placeholder="Link to font page or spec"
               />
             </div>
             <div className="space-y-1">
@@ -466,7 +466,7 @@ export default function AdminBrandAssetsPage() {
                       {font.googleFontUrl && (
                         <Button asChild size="sm" variant="outline">
                           <a href={font.googleFontUrl} target="_blank" rel="noreferrer">
-                            Google Fonts
+                            Open link
                           </a>
                         </Button>
                       )}
