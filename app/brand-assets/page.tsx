@@ -20,6 +20,13 @@ const initialSections: SectionedAssets = {
 
 const BRANDS = ['find.co', 'Webopedia', 'CCN', 'CryptoManiaks'] as const;
 
+const BRAND_LABELS: Record<string, string> = {
+  find: 'Find.co',
+  webopedia: 'Webopedia',
+  ccn: 'CCN',
+  cryptomaniaks: 'CryptoManiaks',
+};
+
 function hexToRgba(hex: string, alpha: number): string {
   let value = hex.trim().replace('#', '');
   if (value.length === 3) {
@@ -136,7 +143,7 @@ function BrandAssetsContent() {
   const [error, setError] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState<Record<string, { width: number; height: number }>>({});
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
-  const [logoView, setLogoView] = useState<'list' | 'cards'>('list');
+  const [logoView, setLogoView] = useState<'list' | 'cards'>('cards');
 
   const copyHex = (hex: string) => {
     if (!hex) return;
@@ -200,40 +207,20 @@ function BrandAssetsContent() {
     return `${mb.toFixed(1)} MB`;
   };
 
+  const displayBrand =
+    BRAND_LABELS[brand.toLowerCase() as keyof typeof BRAND_LABELS] ?? 'Find.co';
+
   return (
     <main className="min-h-screen w-full max-w-6xl mx-auto px-4 py-10 space-y-12">
       <header className="space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-white">Brand Assets</h1>
-            <p className="text-muted-foreground max-w-2xl">
-              Logos, colours, fonts and icons for creating on-brand visuals. Designers can keep this
-              library up to date without code changes.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Brand</span>
-            <select
-              className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-              value={brand}
-              onChange={(e) => {
-                const next = e.target.value;
-                setBrand(next);
-                const params = new URLSearchParams(searchParams.toString());
-                if (next && next !== 'find') {
-                  params.set('brand', next);
-                } else {
-                  params.delete('brand');
-                }
-                router.push(`/brand-assets?${params.toString()}`);
-              }}
-            >
-              <option value="find">Find.co</option>
-              <option value="webopedia" disabled>Webopedia (coming soon)</option>
-              <option value="ccn" disabled>CCN (coming soon)</option>
-              <option value="cryptomaniaks" disabled>CryptoManiaks (coming soon)</option>
-            </select>
-          </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-white">
+            {displayBrand} Brand Assets
+          </h1>
+          <p className="text-muted-foreground max-w-2xl">
+            Logos, colours, fonts and icons for creating on-brand visuals. Designers can keep this
+            library up to date without code changes.
+          </p>
         </div>
       </header>
 
@@ -245,29 +232,25 @@ function BrandAssetsContent() {
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-xl font-semibold text-white">Logos</h2>
-          <div className="inline-flex items-center gap-1 rounded-full border border-border bg-card/60 p-1 text-xs">
-            <button
+          <div className="flex items-center gap-2">
+            <Button
               type="button"
-              onClick={() => setLogoView('list')}
-              className={`px-3 py-1 rounded-full transition-colors ${
-                logoView === 'list'
-                  ? 'bg-muted text-white'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              List
-            </button>
-            <button
-              type="button"
+              size="sm"
+              variant={logoView === 'cards' ? 'default' : 'outline'}
+              className="px-3"
               onClick={() => setLogoView('cards')}
-              className={`px-3 py-1 rounded-full transition-colors ${
-                logoView === 'cards'
-                  ? 'bg-muted text-white'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
             >
               Cards
-            </button>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={logoView === 'list' ? 'default' : 'outline'}
+              className="px-3"
+              onClick={() => setLogoView('list')}
+            >
+              List
+            </Button>
           </div>
         </div>
         {loading ? (
