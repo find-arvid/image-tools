@@ -5,6 +5,13 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Copy, Download, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { BrandAsset, BrandAssetType } from '@/lib/brand-assets-database';
 
@@ -245,49 +252,36 @@ function BrandAssetsContent() {
       <section className="space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold text-white">Logos</h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <span>Sort by</span>
-              <div className="inline-flex rounded-md border border-border bg-card/60 p-0.5">
-                <Button
-                  type="button"
-                  size="xs"
-                  variant={logoSort === 'name' ? 'default' : 'ghost'}
-                  className="h-6 px-2 text-[11px]"
-                  onClick={() => setLogoSort('name')}
-                >
-                  Name
-                </Button>
-                <Button
-                  type="button"
-                  size="xs"
-                  variant={logoSort === 'format' ? 'default' : 'ghost'}
-                  className="h-6 px-2 text-[11px]"
-                  onClick={() => setLogoSort('format')}
-                >
-                  Format
-                </Button>
-              </div>
+          <div className="flex flex-wrap items-center gap-5">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="whitespace-nowrap">Sort by</span>
+              <Select
+                value={logoSort}
+                onValueChange={(value) => setLogoSort(value as 'name' | 'format')}
+              >
+                <SelectTrigger className="h-8 w-[7rem]" size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="format">Format</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                size="sm"
-                variant={logoView === 'cards' ? 'default' : 'outline'}
-                className="px-3"
-                onClick={() => setLogoView('cards')}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="whitespace-nowrap">View</span>
+              <Select
+                value={logoView}
+                onValueChange={(value) => setLogoView(value as 'list' | 'cards')}
               >
-                Cards
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant={logoView === 'list' ? 'default' : 'outline'}
-                className="px-3"
-                onClick={() => setLogoView('list')}
-              >
-                List
-              </Button>
+                <SelectTrigger className="h-8 w-[7rem]" size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cards">Cards</SelectItem>
+                  <SelectItem value="list">List</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -476,7 +470,7 @@ function BrandAssetsContent() {
                       <div className="space-y-1">
                         <p className="text-sm font-medium text-white">{logo.name}</p>
                         {logo.description && (
-                          <p className="text-xs text-muted-foreground line-clamp-2">
+                          <p className="text-xs text-muted-foreground">
                             {logo.description}
                           </p>
                         )}

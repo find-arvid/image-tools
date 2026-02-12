@@ -1,13 +1,100 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, Loader2, Pencil, Trash2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+  useComboboxAnchor,
+} from '@/components/ui/combobox';
 import type { BrandAsset, BrandAssetType } from '@/lib/brand-assets-database';
 
 type SimpleBrandAsset = BrandAsset;
+
+function TagsCombobox({
+  allTags,
+  value,
+  onChange,
+  placeholder = 'Add or select tags…',
+}: {
+  allTags: string[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) {
+  const anchorRef = useComboboxAnchor();
+  const selected = useMemo(
+    () =>
+      value
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean),
+    [value],
+  );
+  const items = useMemo(
+    () => Array.from(new Set([...allTags, ...selected])).sort((a, b) => a.localeCompare(b)),
+    [allTags, selected],
+  );
+
+  const handleValueChange = (next: string[] | null) => {
+    onChange(Array.isArray(next) ? next.join(', ') : '');
+  };
+
+  const handleChipsKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const input = e.currentTarget;
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const v = input.value.trim().replace(/,$/, '');
+      if (v && !selected.includes(v)) {
+        handleValueChange([...selected, v]);
+        input.value = '';
+      }
+    }
+  };
+
+  return (
+    <Combobox
+      items={items}
+      multiple
+      value={selected}
+      onValueChange={handleValueChange}
+    >
+      <div ref={anchorRef} className="w-full">
+        <ComboboxChips className="w-full">
+          <ComboboxValue>
+            {selected.map(tag => (
+              <ComboboxChip key={tag}>{tag}</ComboboxChip>
+            ))}
+          </ComboboxValue>
+          <ComboboxChipsInput
+            placeholder={selected.length === 0 ? placeholder : ''}
+            onKeyDown={handleChipsKeyDown}
+          />
+        </ComboboxChips>
+      </div>
+      <ComboboxContent anchor={anchorRef}>
+        <ComboboxEmpty>No tags found. Type and press Enter to add.</ComboboxEmpty>
+        <ComboboxList>
+          {(tag: string) => (
+            <ComboboxItem key={tag} value={tag}>
+              {tag}
+            </ComboboxItem>
+          )}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  );
+}
 
 export default function AdminBrandAssetsPage() {
   const [assets, setAssets] = useState<SimpleBrandAsset[]>([]);
@@ -21,7 +108,6 @@ export default function AdminBrandAssetsPage() {
   const [logoName, setLogoName] = useState('');
   const [logoDescription, setLogoDescription] = useState('');
   const [logoTags, setLogoTags] = useState('');
-  const [logoVariants, setLogoVariants] = useState('');
   // Other image upload state (icons, project logos)
   const [otherUploading, setOtherUploading] = useState(false);
   const [otherType, setOtherType] = useState<BrandAssetType>('icon');
@@ -29,7 +115,6 @@ export default function AdminBrandAssetsPage() {
   const [otherName, setOtherName] = useState('');
   const [otherDescription, setOtherDescription] = useState('');
   const [otherTags, setOtherTags] = useState('');
-  const [otherVariants, setOtherVariants] = useState('');
 
   // Colour form
   const [colorName, setColorName] = useState('');
@@ -60,8 +145,19 @@ export default function AdminBrandAssetsPage() {
   const [logoEditName, setLogoEditName] = useState('');
   const [logoEditDescription, setLogoEditDescription] = useState('');
   const [logoEditTags, setLogoEditTags] = useState('');
-  const [logoEditVariants, setLogoEditVariants] = useState('');
   const [savingLogoEdit, setSavingLogoEdit] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (logoFile && logoFile.type.startsWith('image/')) {
+      const url = URL.createObjectURL(logoFile);
+      setLogoPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setLogoPreviewUrl(null);
+    return undefined;
+  }, [logoFile]);
 
   const {
     getRootProps: getLogoRootProps,
@@ -163,12 +259,10 @@ export default function AdminBrandAssetsPage() {
       setLogoEditName(logoToEdit.name);
       setLogoEditDescription(logoToEdit.description || '');
       setLogoEditTags((logoToEdit.tags || []).join(', '));
-      setLogoEditVariants((logoToEdit.variants || []).join(', '));
     } else {
       setLogoEditName('');
       setLogoEditDescription('');
       setLogoEditTags('');
-      setLogoEditVariants('');
     }
   }, [logoToEdit]);
 
@@ -190,48 +284,6 @@ export default function AdminBrandAssetsPage() {
     }
   }, [editingFontId, assets]);
 
-  const handleFileUpload = async () => {
-    if (!selectedFile) return;
-    setUploading(true);
-    setError(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('type', uploadType);
-      formData.append('brand', selectedBrand);
-      if (assetName.trim()) formData.append('name', assetName.trim());
-      if (assetDescription.trim()) formData.append('description', assetDescription.trim());
-      if (assetTags.trim()) formData.append('tags', assetTags.trim());
-      if (assetVariants.trim()) formData.append('variants', assetVariants.trim());
-
-      const res = await fetch('/api/brand-assets/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || body.details || `Upload failed: ${res.status}`);
-      }
-
-      // Refresh list
-      await loadAssets();
-
-      // Reset form
-      setSelectedFile(null);
-      setAssetName('');
-      setAssetDescription('');
-      setAssetTags('');
-      setAssetVariants('');
-    } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      setUploading(false);
-    }
-  };
-
   const uploadLogo = async () => {
     if (!logoFile) return;
     setLogoUploading(true);
@@ -245,7 +297,6 @@ export default function AdminBrandAssetsPage() {
       if (logoName.trim()) formData.append('name', logoName.trim());
       if (logoDescription.trim()) formData.append('description', logoDescription.trim());
       if (logoTags.trim()) formData.append('tags', logoTags.trim());
-      if (logoVariants.trim()) formData.append('variants', logoVariants.trim());
 
       const res = await fetch('/api/brand-assets/upload', {
         method: 'POST',
@@ -263,7 +314,6 @@ export default function AdminBrandAssetsPage() {
       setLogoName('');
       setLogoDescription('');
       setLogoTags('');
-      setLogoVariants('');
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -285,7 +335,6 @@ export default function AdminBrandAssetsPage() {
       if (otherName.trim()) formData.append('name', otherName.trim());
       if (otherDescription.trim()) formData.append('description', otherDescription.trim());
       if (otherTags.trim()) formData.append('tags', otherTags.trim());
-      if (otherVariants.trim()) formData.append('variants', otherVariants.trim());
 
       const res = await fetch('/api/brand-assets/upload', {
         method: 'POST',
@@ -303,7 +352,6 @@ export default function AdminBrandAssetsPage() {
       setOtherName('');
       setOtherDescription('');
       setOtherTags('');
-      setOtherVariants('');
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -614,9 +662,6 @@ export default function AdminBrandAssetsPage() {
       const tagsArray = logoEditTags
         ? logoEditTags.split(',').map(t => t.trim()).filter(Boolean)
         : [];
-      const variantsArray = logoEditVariants
-        ? logoEditVariants.split(',').map(v => v.trim()).filter(Boolean)
-        : [];
 
       const res = await fetch(`/api/brand-assets/${logoToEdit.id}`, {
         method: 'PATCH',
@@ -627,7 +672,6 @@ export default function AdminBrandAssetsPage() {
           name: trimmedName,
           description: logoEditDescription.trim() || undefined,
           tags: tagsArray,
-          variants: variantsArray,
         }),
       });
 
@@ -645,26 +689,6 @@ export default function AdminBrandAssetsPage() {
     } finally {
       setSavingLogoEdit(false);
     }
-  };
-
-  const toggleTagInLogoInput = (tag: string) => {
-    const current = logoTags
-      .split(',')
-      .map(t => t.trim())
-      .filter(t => t.length > 0);
-    const exists = current.includes(tag);
-    const next = exists ? current.filter(t => t !== tag) : [...current, tag];
-    setLogoTags(next.join(', '));
-  };
-
-  const toggleTagInOtherInput = (tag: string) => {
-    const current = otherTags
-      .split(',')
-      .map(t => t.trim())
-      .filter(t => t.length > 0);
-    const exists = current.includes(tag);
-    const next = exists ? current.filter(t => t !== tag) : [...current, tag];
-    setOtherTags(next.join(', '));
   };
 
   return (
@@ -712,6 +736,71 @@ export default function AdminBrandAssetsPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Logo file
+            </label>
+            {logoFile ? (
+              <div className="relative border border-border rounded-md overflow-hidden bg-muted/20">
+                <div className="aspect-video flex items-center justify-center p-4">
+                  {logoPreviewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={logoPreviewUrl}
+                      alt={logoFile.name}
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-sm text-muted-foreground">{logoFile.name}</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border bg-background/60">
+                  <span className="text-xs text-muted-foreground truncate flex-1">
+                    {logoFile.name}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-destructive hover:text-destructive"
+                    onClick={() => setLogoFile(null)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div
+                {...getLogoRootProps()}
+                className={`flex items-center justify-center border border-dashed rounded-md px-4 py-8 text-sm cursor-pointer ${
+                  isLogoDragActive ? 'border-white/60 bg-white/5' : 'border-border'
+                }`}
+              >
+                <input {...getLogoInputProps()} />
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <Upload className="h-5 w-5" />
+                  <span>Drag &amp; drop or click to select a logo image</span>
+                </div>
+              </div>
+            )}
+
+            <Button
+              type="button"
+              onClick={uploadLogo}
+              disabled={!logoFile || logoUploading}
+              className="w-full"
+            >
+              {logoUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading…
+                </>
+              ) : (
+                'Upload logo'
+              )}
+            </Button>
+          </div>
+
+          <div className="space-y-3">
             <div className="space-y-1">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
                 Name
@@ -740,88 +829,13 @@ export default function AdminBrandAssetsPage() {
               <label className="block text-xs font-medium text-muted-foreground mb-1">
                 Tags
               </label>
-              <input
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+              <TagsCombobox
+                allTags={allTags}
                 value={logoTags}
-                onChange={e => setLogoTags(e.target.value)}
-                placeholder="Comma-separated, e.g. dark, horizontal, mono"
-              />
-              {allTags.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {allTags.map(tag => {
-                    const current = logoTags
-                      .split(',')
-                      .map(t => t.trim())
-                      .filter(t => t.length > 0);
-                    const active = current.includes(tag);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => toggleTagInLogoInput(tag)}
-                        className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
-                          active
-                            ? 'bg-white text-black border-white'
-                            : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted/60'
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Variants
-              </label>
-              <input
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                value={logoVariants}
-                onChange={e => setLogoVariants(e.target.value)}
-                placeholder="Comma-separated, e.g. full-colour, mono"
+                onChange={setLogoTags}
+                placeholder="e.g. dark, horizontal, mono"
               />
             </div>
-          </div>
-
-          <div className="space-y-3">
-            <label className="block text-xs font-medium text-muted-foreground mb-1">
-              Logo file
-            </label>
-            <div
-              {...getLogoRootProps()}
-              className={`flex items-center justify-center border border-dashed rounded-md px-4 py-8 text-sm cursor-pointer ${
-                isLogoDragActive ? 'border-white/60 bg-white/5' : 'border-border'
-              }`}
-            >
-              <input {...getLogoInputProps()} />
-              <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                <Upload className="h-5 w-5" />
-                {logoFile ? (
-                  <span>{logoFile.name}</span>
-                ) : (
-                  <span>Drag &amp; drop or click to select a logo image</span>
-                )}
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              onClick={uploadLogo}
-              disabled={!logoFile || logoUploading}
-              className="mt-2"
-            >
-              {logoUploading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Uploading…
-                </>
-              ) : (
-                'Upload logo'
-              )}
-            </Button>
           </div>
         </div>
 
@@ -872,7 +886,7 @@ export default function AdminBrandAssetsPage() {
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-medium text-white">{logo.name}</span>
                           {logo.description && (
-                            <span className="text-[11px] text-muted-foreground line-clamp-2">
+                            <span className="text-[11px] text-muted-foreground">
                               {logo.description}
                             </span>
                           )}
@@ -957,22 +971,11 @@ export default function AdminBrandAssetsPage() {
                       <label className="block text-xs font-medium text-muted-foreground mb-1">
                         Tags
                       </label>
-                      <input
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                      <TagsCombobox
+                        allTags={allTags}
                         value={logoEditTags}
-                        onChange={e => setLogoEditTags(e.target.value)}
-                        placeholder="Comma-separated, e.g. dark, horizontal, mono"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
-                        Variants
-                      </label>
-                      <input
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                        value={logoEditVariants}
-                        onChange={e => setLogoEditVariants(e.target.value)}
-                        placeholder="Comma-separated, e.g. full-colour, mono"
+                        onChange={setLogoEditTags}
+                        placeholder="e.g. dark, horizontal, mono"
                       />
                     </div>
                   </div>
@@ -1062,48 +1065,11 @@ export default function AdminBrandAssetsPage() {
               <label className="block text-xs font-medium text-muted-foreground mb-1">
                 Tags
               </label>
-              <input
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+              <TagsCombobox
+                allTags={allTags}
                 value={otherTags}
-                onChange={e => setOtherTags(e.target.value)}
-                placeholder="Comma-separated, e.g. app icon, mono"
-              />
-              {allTags.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {allTags.map(tag => {
-                    const current = otherTags
-                      .split(',')
-                      .map(t => t.trim())
-                      .filter(t => t.length > 0);
-                    const active = current.includes(tag);
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => toggleTagInOtherInput(tag)}
-                        className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
-                          active
-                            ? 'bg-white text-black border-white'
-                            : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted/60'
-                        }`}
-                      >
-                        {tag}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <label className="block text-xs font-medium text-muted-foreground mb-1">
-                Variants
-              </label>
-              <input
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                value={otherVariants}
-                onChange={e => setOtherVariants(e.target.value)}
-                placeholder="Comma-separated, e.g. square, mono"
+                onChange={setOtherTags}
+                placeholder="e.g. app icon, mono"
               />
             </div>
           </div>
