@@ -41,6 +41,11 @@ export default function AdminBrandAssetsPage() {
   const [fontUsage, setFontUsage] = useState('');
   const [fontGoogleUrl, setFontGoogleUrl] = useState('');
   const [fontDownloadUrl, setFontDownloadUrl] = useState('');
+  const [editingFontId, setEditingFontId] = useState<string | null>(null);
+  const [orderedFonts, setOrderedFonts] = useState<BrandAsset[]>([]);
+  const [draggedFontId, setDraggedFontId] = useState<string | null>(null);
+  const [dragOverFontId, setDragOverFontId] = useState<string | null>(null);
+  const [savingFontOrder, setSavingFontOrder] = useState(false);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: acceptedFiles => {
@@ -53,6 +58,13 @@ export default function AdminBrandAssetsPage() {
     },
     maxFiles: 1,
   });
+
+  // Always jump to top when opening this page
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, []);
 
   const loadAssets = async () => {
     try {
@@ -83,6 +95,14 @@ export default function AdminBrandAssetsPage() {
     setOrderedColors(cols);
   }, [assets]);
 
+  // Sync ordered fonts when assets load
+  useEffect(() => {
+    const fnts = assets
+      .filter((a): a is BrandAsset => a.type === 'font')
+      .sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+    setOrderedFonts(fnts);
+  }, [assets]);
+
   // Populate colour form when editing
   useEffect(() => {
     if (editingColorId) {
@@ -100,6 +120,24 @@ export default function AdminBrandAssetsPage() {
       setColorCategory('primary');
     }
   }, [editingColorId, assets]);
+
+  // Populate font form when editing
+  useEffect(() => {
+    if (editingFontId) {
+      const font = assets.find(a => a.type === 'font' && a.id === editingFontId);
+      if (font) {
+        setFontName(font.name);
+        setFontUsage(font.usage || '');
+        setFontGoogleUrl(font.googleFontUrl || '');
+        setFontDownloadUrl(font.downloadUrl || '');
+      }
+    } else {
+      setFontName('');
+      setFontUsage('');
+      setFontGoogleUrl('');
+      setFontDownloadUrl('');
+    }
+  }, [editingFontId, assets]);
 
   const handleFileUpload = async () => {
     if (!selectedFile) return;
@@ -252,6 +290,68 @@ export default function AdminBrandAssetsPage() {
     }
   };
 
+  const handleFontDragStart = (e: React.DragEvent, id: string) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    setDraggedFontId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleFontDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverFontId(id);
+  };
+
+  const handleFontDragLeave = () => {
+    setDragOverFontId(null);
+  };
+
+  const handleFontDrop = (e: React.DragEvent, dropId: string) => {
+    e.preventDefault();
+    setDragOverFontId(null);
+    if (!draggedFontId || draggedFontId === dropId) return;
+    const from = orderedFonts.findIndex((f) => f.id === draggedFontId);
+    const to = orderedFonts.findIndex((f) => f.id === dropId);
+    if (from === -1 || to === -1) return;
+    const item = orderedFonts[from];
+    const newArr = orderedFonts.filter((_, i) => i !== from);
+    const insertAt = from < to ? to - 1 : to;
+    newArr.splice(insertAt, 0, item);
+    setOrderedFonts(newArr);
+  };
+
+  const handleFontDragEnd = async () => {
+    if (!draggedFontId) return;
+    setDraggedFontId(null);
+    const prevOrdered = assets
+      .filter((a): a is BrandAsset => a.type === 'font')
+      .sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+    const orderChanged =
+      orderedFonts.length !== prevOrdered.length ||
+      orderedFonts.some((f, i) => f.id !== prevOrdered[i]?.id);
+    if (!orderChanged) return;
+    setSavingFontOrder(true);
+    setError(null);
+    try {
+      await Promise.all(
+        orderedFonts.map((f, index) =>
+          fetch(`/api/brand-assets/${f.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: index }),
+          })
+        )
+      );
+      await loadAssets();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to save font order');
+    } finally {
+      setSavingFontOrder(false);
+    }
+  };
+
   const handleDeleteColor = async () => {
     if (!colorToDelete) return;
     try {
@@ -279,35 +379,56 @@ export default function AdminBrandAssetsPage() {
       setUploading(true);
       setError(null);
 
-      const res = await fetch('/api/brand-assets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'font',
-          name: fontName.trim(),
-          usage: fontUsage.trim() || undefined,
-          googleFontUrl: fontGoogleUrl.trim() || undefined,
-          downloadUrl: fontDownloadUrl.trim() || undefined,
-          brand: selectedBrand,
-        }),
-      });
+      const payload = {
+        name: fontName.trim(),
+        usage: fontUsage.trim() || undefined,
+        googleFontUrl: fontGoogleUrl.trim() || undefined,
+        downloadUrl: fontDownloadUrl.trim() || undefined,
+      };
+
+      const res = editingFontId
+        ? await fetch(`/api/brand-assets/${editingFontId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          })
+        : await fetch('/api/brand-assets', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'font',
+              brand: selectedBrand,
+              ...payload,
+            }),
+          });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || body.details || `Failed to create font: ${res.status}`);
+        throw new Error(
+          body.error ||
+            body.details ||
+            `Failed to ${editingFontId ? 'update' : 'create'} font: ${res.status}`,
+        );
       }
 
       await loadAssets();
 
+      setEditingFontId(null);
       setFontName('');
       setFontUsage('');
       setFontGoogleUrl('');
       setFontDownloadUrl('');
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'Failed to create font');
+      setError(
+        err instanceof Error
+          ? err.message
+          : `Failed to ${editingFontId ? 'update' : 'create'} font`,
+      );
     } finally {
       setUploading(false);
     }
@@ -511,35 +632,68 @@ export default function AdminBrandAssetsPage() {
                 placeholder="Link to zipped font files (if available)"
               />
             </div>
-            <Button
-              type="button"
-              onClick={handleCreateFont}
-              disabled={!fontName.trim() || uploading}
-            >
-              Add font
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                onClick={handleCreateFont}
+                disabled={!fontName.trim() || uploading}
+              >
+                {editingFontId ? 'Save changes' : 'Add font'}
+              </Button>
+              {editingFontId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingFontId(null)}
+                  disabled={uploading}
+                >
+                  Cancel
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Existing fonts */}
           <div className="md:col-span-2 space-y-3">
             <p className="text-xs text-muted-foreground">
-              Existing fonts for this brand
+              Existing fonts — drag to reorder
             </p>
-            {fonts.length === 0 ? (
+            {orderedFonts.length === 0 ? (
               <p className="text-xs text-muted-foreground">No fonts defined yet.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {fonts.map((font) => (
+                {orderedFonts.map((font) => (
                   <div
                     key={font.id}
-                    className="border border-border rounded-md p-3 bg-background/40 flex flex-col gap-2"
+                    draggable
+                    onDragStart={(e) => handleFontDragStart(e, font.id)}
+                    onDragOver={(e) => handleFontDragOver(e, font.id)}
+                    onDragLeave={handleFontDragLeave}
+                    onDrop={(e) => handleFontDrop(e, font.id)}
+                    onDragEnd={handleFontDragEnd}
+                    className={`border border-border rounded-md p-3 bg-background/40 flex flex-col gap-2 cursor-grab active:cursor-grabbing transition-shadow ${
+                      draggedFontId === font.id ? 'opacity-50' : ''
+                    } ${dragOverFontId === font.id ? 'ring-2 ring-primary/50' : ''}`}
                   >
-                    <p className="text-sm font-medium text-white">{font.name}</p>
-                    {font.usage && (
-                      <p className="text-xs text-muted-foreground line-clamp-3">
-                        {font.usage}
-                      </p>
-                    )}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-white">{font.name}</p>
+                        {font.usage && (
+                          <p className="text-xs text-muted-foreground line-clamp-3">
+                            {font.usage}
+                          </p>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={() => setEditingFontId(font.id)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                     <div className="flex flex-wrap gap-2 mt-1">
                       {font.googleFontUrl && (
                         <Button asChild size="sm" variant="outline">
@@ -559,6 +713,12 @@ export default function AdminBrandAssetsPage() {
                   </div>
                 ))}
               </div>
+            )}
+            {savingFontOrder && (
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Saving font order…
+              </p>
             )}
           </div>
         </div>

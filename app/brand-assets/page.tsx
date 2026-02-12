@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, type SyntheticEvent } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Copy } from 'lucide-react';
+import { Copy, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { BrandAsset, BrandAssetType } from '@/lib/brand-assets-database';
@@ -247,9 +247,13 @@ function BrandAssetsContent() {
                       </td>
                       <td className="px-3 py-2 align-middle text-right">
                         {logo.publicUrl && (
-                          <Button asChild size="sm" variant="outline">
-                            <a href={logo.publicUrl} download>
-                              Download
+                          <Button asChild size="icon" variant="outline">
+                            <a
+                              href={logo.publicUrl}
+                              download
+                              aria-label={`Download ${logo.name}`}
+                            >
+                              <Download className="w-4 h-4" />
                             </a>
                           </Button>
                         )}
@@ -294,7 +298,7 @@ function BrandAssetsContent() {
                 (c) => (c.colorCategory || 'primary') === 'secondary'
               );
 
-              const renderGrid = (items: BrandAsset[]) => (
+              const renderGrid = (items: BrandAsset[], variant: 'primary' | 'secondary') => (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {items.map((color, index) => {
                     const hex = color.hex || '#000000';
@@ -310,7 +314,7 @@ function BrandAssetsContent() {
                         title={`Copy ${hex}`}
                       >
                         <div
-                          className="h-16 w-full rounded-md border-2 border-transparent"
+                          className={`${variant === 'primary' ? 'h-32' : 'h-16'} w-full rounded-md border-2 border-transparent`}
                           style={{ backgroundColor: hex }}
                         >
                           {isCopied && (
@@ -319,34 +323,33 @@ function BrandAssetsContent() {
                             </span>
                           )}
                         </div>
-                        <div className="space-y-1 pr-8">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="font-medium text-sm text-white">{color.name}</p>
-                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                              {(color.colorCategory || 'primary') === 'primary'
-                                ? 'Primary'
-                                : 'Secondary'}
-                            </span>
-                          </div>
+                        <div className="space-y-2">
+                          <p className="font-semibold text-base text-white">{color.name}</p>
                           {color.usage && (
-                            <p className="text-xs text-muted-foreground">{color.usage}</p>
+                            <p className="text-sm text-muted-foreground">{color.usage}</p>
                           )}
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span className="underline underline-offset-2">{color.hex}</span>
-                            {color.rgb && <span>· rgb({color.rgb})</span>}
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-2 rounded-md border border-border bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                copyHex(hex);
+                              }}
+                              title={`Copy ${hex}`}
+                            >
+                              <span className="font-mono">
+                                {(color.hex || hex).toUpperCase()}
+                              </span>
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                            {color.rgb && (
+                              <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                                rgb({color.rgb})
+                              </span>
+                            )}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          className="absolute bottom-3 right-3 p-1.5 rounded-md bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            copyHex(hex);
-                          }}
-                          title={`Copy ${hex}`}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
                       </div>
                     );
                   })}
@@ -358,13 +361,13 @@ function BrandAssetsContent() {
                   {primary.length > 0 && (
                     <div className="space-y-3">
                       <p className="text-sm font-medium text-white/80">Primary</p>
-                      {renderGrid(primary)}
+                      {renderGrid(primary, 'primary')}
                     </div>
                   )}
                   {secondary.length > 0 && (
                     <div className="space-y-3">
                       <p className="text-sm font-medium text-white/80">Secondary</p>
-                      {renderGrid(secondary)}
+                      {renderGrid(secondary, 'secondary')}
                     </div>
                   )}
                 </>
@@ -533,9 +536,13 @@ function BrandAssetsContent() {
                       </td>
                       <td className="px-3 py-2 align-middle text-right">
                         {asset.publicUrl && (
-                          <Button asChild size="sm" variant="outline">
-                            <a href={asset.publicUrl} download>
-                              Download
+                          <Button asChild size="icon" variant="outline">
+                            <a
+                              href={asset.publicUrl}
+                              download
+                              aria-label={`Download ${asset.name}`}
+                            >
+                              <Download className="w-4 h-4" />
                             </a>
                           </Button>
                         )}
