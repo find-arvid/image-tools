@@ -48,6 +48,13 @@ export default function AdminBrandAssetsPage() {
   const [draggedFontId, setDraggedFontId] = useState<string | null>(null);
   const [dragOverFontId, setDragOverFontId] = useState<string | null>(null);
   const [savingFontOrder, setSavingFontOrder] = useState(false);
+  // Logo editing
+  const [logoToEdit, setLogoToEdit] = useState<BrandAsset | null>(null);
+  const [logoEditName, setLogoEditName] = useState('');
+  const [logoEditDescription, setLogoEditDescription] = useState('');
+  const [logoEditTags, setLogoEditTags] = useState('');
+  const [logoEditVariants, setLogoEditVariants] = useState('');
+  const [savingLogoEdit, setSavingLogoEdit] = useState(false);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: acceptedFiles => {
@@ -122,6 +129,21 @@ export default function AdminBrandAssetsPage() {
       setColorCategory('primary');
     }
   }, [editingColorId, assets]);
+
+  // Populate logo edit form when editing
+  useEffect(() => {
+    if (logoToEdit) {
+      setLogoEditName(logoToEdit.name);
+      setLogoEditDescription(logoToEdit.description || '');
+      setLogoEditTags((logoToEdit.tags || []).join(', '));
+      setLogoEditVariants((logoToEdit.variants || []).join(', '));
+    } else {
+      setLogoEditName('');
+      setLogoEditDescription('');
+      setLogoEditTags('');
+      setLogoEditVariants('');
+    }
+  }, [logoToEdit]);
 
   // Populate font form when editing
   useEffect(() => {
@@ -466,6 +488,53 @@ export default function AdminBrandAssetsPage() {
         .filter(tag => tag.length > 0),
     ),
   ).sort((a, b) => a.localeCompare(b));
+
+  const handleSaveLogoEdit = async () => {
+    if (!logoToEdit) return;
+
+    const trimmedName = logoEditName.trim();
+    if (!trimmedName) {
+      alert('Please enter a name for the logo.');
+      return;
+    }
+
+    setSavingLogoEdit(true);
+    try {
+      const tagsArray = logoEditTags
+        ? logoEditTags.split(',').map(t => t.trim()).filter(Boolean)
+        : [];
+      const variantsArray = logoEditVariants
+        ? logoEditVariants.split(',').map(v => v.trim()).filter(Boolean)
+        : [];
+
+      const res = await fetch(`/api/brand-assets/${logoToEdit.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: trimmedName,
+          description: logoEditDescription.trim() || undefined,
+          tags: tagsArray,
+          variants: variantsArray,
+        }),
+      });
+
+      if (!res.ok) {
+        console.error('Failed to update logo metadata', await res.text());
+        alert('Failed to update logo details. Please try again.');
+        return;
+      }
+
+      await loadAssets();
+      setLogoToEdit(null);
+    } catch (err) {
+      console.error('Error updating logo metadata', err);
+      alert('Something went wrong while updating the logo.');
+    } finally {
+      setSavingLogoEdit(false);
+    }
+  };
 
   const toggleTagInInput = (tag: string) => {
     const current = assetTags
@@ -1073,29 +1142,169 @@ export default function AdminBrandAssetsPage() {
 
       {/* Simple overview of latest logos */}
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">Latest logos</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-white">Latest logos</h2>
+          <p className="text-xs text-muted-foreground">
+            Click edit to change logo name, description or tags.
+          </p>
+        </div>
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : logos.length === 0 ? (
           <p className="text-sm text-muted-foreground">No logos uploaded yet.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {logos.slice(0, 6).map(logo => (
-              <div key={logo.id} className="border border-border rounded-md p-2 bg-background/40 flex flex-col gap-2">
-                {logo.publicUrl && (
-                  <div className="relative w-full aspect-video bg-muted/20 rounded-sm overflow-hidden flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={logo.publicUrl}
-                      alt={logo.name}
-                      className="max-h-full max-w-full object-contain"
-                    />
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {logos.slice(0, 6).map(logo => (
+                <div
+                  key={logo.id}
+                  className="border border-border rounded-md p-2 bg-background/40 flex flex-col gap-2"
+                >
+                  {logo.publicUrl && (
+                    <div className="relative w-full aspect-video bg-muted/20 rounded-sm overflow-hidden flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={logo.publicUrl}
+                        alt={logo.name}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-medium text-white truncate">{logo.name}</p>
+                      {logo.description && (
+                        <p className="text-[11px] text-muted-foreground line-clamp-2">
+                          {logo.description}
+                        </p>
+                      )}
+                      {logo.tags && logo.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {logo.tags.map(tag => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2"
+                      onClick={() => setLogoToEdit(logo)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                )}
-                <p className="text-xs font-medium text-white truncate">{logo.name}</p>
+                </div>
+              ))}
+            </div>
+
+            {logoToEdit && (
+              <div className="mt-4 border border-border rounded-lg bg-card/70 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">
+                      Edit logo details
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Updating text only – the file stays the same.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLogoToEdit(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Name
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                        value={logoEditName}
+                        onChange={e => setLogoEditName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground min-h-[60px]"
+                        value={logoEditDescription}
+                        onChange={e => setLogoEditDescription(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Tags
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                        value={logoEditTags}
+                        onChange={e => setLogoEditTags(e.target.value)}
+                        placeholder="Comma-separated, e.g. dark, horizontal, mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Variants
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                        value={logoEditVariants}
+                        onChange={e => setLogoEditVariants(e.target.value)}
+                        placeholder="Comma-separated, e.g. full-colour, mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLogoToEdit(null)}
+                    disabled={savingLogoEdit}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleSaveLogoEdit}
+                    disabled={savingLogoEdit}
+                  >
+                    {savingLogoEdit ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving…
+                      </>
+                    ) : (
+                      'Save changes'
+                    )}
+                  </Button>
+                </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </section>
     </main>
