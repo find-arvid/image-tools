@@ -29,6 +29,9 @@ export interface BrandAsset {
   rgb?: string; // e.g. "207, 224, 45"
   usage?: string; // short usage description
 
+  // Colour categorisation
+  colorCategory?: 'primary' | 'secondary';
+
   // Font assets
   googleFontUrl?: string;
   downloadR2Key?: string;
@@ -40,6 +43,7 @@ export interface BrandAsset {
   fileSizeBytes?: number;
   width?: number;
   height?: number;
+  order?: number; // Display order (lower = first)
   createdAt: number;
   updatedAt: number;
 }
@@ -98,6 +102,7 @@ export async function saveBrandAsset(asset: BrandAsset): Promise<boolean> {
       hex: asset.hex || '',
       rgb: asset.rgb || '',
       usage: asset.usage || '',
+      colorCategory: asset.colorCategory || '',
       googleFontUrl: asset.googleFontUrl || '',
       downloadR2Key: asset.downloadR2Key || '',
       downloadUrl: asset.downloadUrl || '',
@@ -106,6 +111,7 @@ export async function saveBrandAsset(asset: BrandAsset): Promise<boolean> {
       fileSizeBytes: asset.fileSizeBytes ?? 0,
       width: asset.width ?? 0,
       height: asset.height ?? 0,
+      order: asset.order ?? 0,
       createdAt: asset.createdAt,
       updatedAt: asset.updatedAt,
     });
@@ -161,6 +167,7 @@ function mapHashToBrandAsset(data: Record<string, unknown> | null): BrandAsset |
     hex: (data.hex as string) || undefined,
     rgb: (data.rgb as string) || undefined,
     usage: (data.usage as string) || undefined,
+    colorCategory: (data.colorCategory as 'primary' | 'secondary') || undefined,
     googleFontUrl: (data.googleFontUrl as string) || undefined,
     downloadR2Key: (data.downloadR2Key as string) || undefined,
     downloadUrl: (data.downloadUrl as string) || undefined,
@@ -169,6 +176,7 @@ function mapHashToBrandAsset(data: Record<string, unknown> | null): BrandAsset |
     fileSizeBytes: data.fileSizeBytes ? Number(data.fileSizeBytes) : undefined,
     width: data.width ? Number(data.width) : undefined,
     height: data.height ? Number(data.height) : undefined,
+    order: data.order !== undefined ? Number(data.order) : undefined,
     createdAt: Number(data.createdAt ?? Date.now()),
     updatedAt: Number(data.updatedAt ?? Date.now()),
   };

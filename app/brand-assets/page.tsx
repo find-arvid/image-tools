@@ -282,54 +282,94 @@ function BrandAssetsContent() {
         ) : assetsByType.color.length === 0 ? (
           <p className="text-muted-foreground text-sm">No colours added yet.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {assetsByType.color.map((color, index) => {
-              const hex = color.hex || '#000000';
-              const isCopied = copiedHex === hex;
-              return (
-                <div
-                  key={`${color.id}-${index}`}
-                  role="button"
-                  tabIndex={0}
-                  className="relative border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 cursor-pointer hover:border-muted-foreground/30 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-                  onClick={() => copyHex(hex)}
-                  onKeyDown={(e) => e.key === 'Enter' && copyHex(hex)}
-                  title={`Copy ${hex}`}
-                >
-                  <div
-                    className="h-16 w-full rounded-md border-2 border-transparent"
-                    style={{ backgroundColor: hex }}
-                  >
-                    {isCopied && (
-                      <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white bg-black/60 m-2">
-                        Copied!
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-1 pr-8">
-                    <p className="font-medium text-sm text-white">{color.name}</p>
-                    {color.usage && (
-                      <p className="text-xs text-muted-foreground">{color.usage}</p>
-                    )}
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="underline underline-offset-2">{color.hex}</span>
-                      {color.rgb && <span>· rgb({color.rgb})</span>}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="absolute bottom-3 right-3 p-1.5 rounded-md bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      copyHex(hex);
-                    }}
-                    title={`Copy ${hex}`}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
+          <div className="space-y-6">
+            {(() => {
+              const sorted = [...assetsByType.color].sort(
+                (a, b) => (a.order ?? 999999) - (b.order ?? 999999)
+              );
+              const primary = sorted.filter(
+                (c) => (c.colorCategory || 'primary') === 'primary'
+              );
+              const secondary = sorted.filter(
+                (c) => (c.colorCategory || 'primary') === 'secondary'
+              );
+
+              const renderGrid = (items: BrandAsset[]) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {items.map((color, index) => {
+                    const hex = color.hex || '#000000';
+                    const isCopied = copiedHex === hex;
+                    return (
+                      <div
+                        key={`${color.id}-${index}`}
+                        role="button"
+                        tabIndex={0}
+                        className="relative border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 cursor-pointer hover:border-muted-foreground/30 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
+                        onClick={() => copyHex(hex)}
+                        onKeyDown={(e) => e.key === 'Enter' && copyHex(hex)}
+                        title={`Copy ${hex}`}
+                      >
+                        <div
+                          className="h-16 w-full rounded-md border-2 border-transparent"
+                          style={{ backgroundColor: hex }}
+                        >
+                          {isCopied && (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white bg-black/60 m-2">
+                              Copied!
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-1 pr-8">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-medium text-sm text-white">{color.name}</p>
+                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                              {(color.colorCategory || 'primary') === 'primary'
+                                ? 'Primary'
+                                : 'Secondary'}
+                            </span>
+                          </div>
+                          {color.usage && (
+                            <p className="text-xs text-muted-foreground">{color.usage}</p>
+                          )}
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="underline underline-offset-2">{color.hex}</span>
+                            {color.rgb && <span>· rgb({color.rgb})</span>}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="absolute bottom-3 right-3 p-1.5 rounded-md bg-muted/80 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyHex(hex);
+                          }}
+                          title={`Copy ${hex}`}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            })}
+
+              return (
+                <>
+                  {primary.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-white/80">Primary</p>
+                      {renderGrid(primary)}
+                    </div>
+                  )}
+                  {secondary.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-white/80">Secondary</p>
+                      {renderGrid(secondary)}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </section>

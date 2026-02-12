@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { Upload, Loader2, Pencil, Trash2, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { BrandAsset, BrandAssetType } from '@/lib/brand-assets-database';
 
@@ -28,9 +28,14 @@ export default function AdminBrandAssetsPage() {
   const [colorName, setColorName] = useState('');
   const [colorHex, setColorHex] = useState('#cfe02d');
   const [colorUsage, setColorUsage] = useState('');
+  const [colorCategory, setColorCategory] = useState<'primary' | 'secondary'>('primary');
   const [editingColorId, setEditingColorId] = useState<string | null>(null);
   const [colorToDelete, setColorToDelete] = useState<BrandAsset | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [orderedColors, setOrderedColors] = useState<BrandAsset[]>([]);
+  const [draggedColorId, setDraggedColorId] = useState<string | null>(null);
+  const [dragOverColorId, setDragOverColorId] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
   // Font form
   const [fontName, setFontName] = useState('');
   const [fontUsage, setFontUsage] = useState('');
@@ -70,6 +75,14 @@ export default function AdminBrandAssetsPage() {
     loadAssets();
   }, [selectedBrand]);
 
+  // Sync ordered colors when assets load
+  useEffect(() => {
+    const cols = assets
+      .filter((a): a is BrandAsset => a.type === 'color')
+      .sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+    setOrderedColors(cols);
+  }, [assets]);
+
   // Populate colour form when editing
   useEffect(() => {
     if (editingColorId) {
@@ -78,11 +91,13 @@ export default function AdminBrandAssetsPage() {
         setColorName(color.name);
         setColorHex(color.hex || '#000000');
         setColorUsage(color.usage || '');
+        setColorCategory(color.colorCategory || 'primary');
       }
     } else {
       setColorName('');
       setColorHex('#cfe02d');
       setColorUsage('');
+      setColorCategory('primary');
     }
   }, [editingColorId, assets]);
 
@@ -139,6 +154,7 @@ export default function AdminBrandAssetsPage() {
         name: colorName.trim(),
         hex: colorHex.trim(),
         usage: colorUsage.trim() || undefined,
+        colorCategory,
       };
 
       const res = editingColorId
@@ -171,6 +187,68 @@ export default function AdminBrandAssetsPage() {
       setError(err instanceof Error ? err.message : `Failed to ${editingColorId ? 'update' : 'create'} colour`);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleColorDragStart = (e: React.DragEvent, id: string) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    setDraggedColorId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleColorDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverColorId(id);
+  };
+
+  const handleColorDragLeave = () => {
+    setDragOverColorId(null);
+  };
+
+  const handleColorDrop = (e: React.DragEvent, dropId: string) => {
+    e.preventDefault();
+    setDragOverColorId(null);
+    if (!draggedColorId || draggedColorId === dropId) return;
+    const from = orderedColors.findIndex((c) => c.id === draggedColorId);
+    const to = orderedColors.findIndex((c) => c.id === dropId);
+    if (from === -1 || to === -1) return;
+    const item = orderedColors[from];
+    const newArr = orderedColors.filter((_, i) => i !== from);
+    const insertAt = from < to ? to - 1 : to;
+    newArr.splice(insertAt, 0, item);
+    setOrderedColors(newArr);
+  };
+
+  const handleColorDragEnd = async () => {
+    if (!draggedColorId) return;
+    setDraggedColorId(null);
+    const prevOrdered = assets
+      .filter((a): a is BrandAsset => a.type === 'color')
+      .sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+    const orderChanged =
+      orderedColors.length !== prevOrdered.length ||
+      orderedColors.some((c, i) => c.id !== prevOrdered[i]?.id);
+    if (!orderChanged) return;
+    setSavingOrder(true);
+    setError(null);
+    try {
+      await Promise.all(
+        orderedColors.map((c, index) =>
+          fetch(`/api/brand-assets/${c.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: index }),
+          })
+        )
+      );
+      await loadAssets();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to save order');
+    } finally {
+      setSavingOrder(false);
     }
   };
 
@@ -529,6 +607,19 @@ export default function AdminBrandAssetsPage() {
                 placeholder="Optional: where to use this colour"
               />
             </div>
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Category
+              </label>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                value={colorCategory}
+                onChange={(e) => setColorCategory(e.target.value as 'primary' | 'secondary')}
+              >
+                <option value="primary">Primary</option>
+                <option value="secondary">Secondary</option>
+              </select>
+            </div>
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -551,22 +642,38 @@ export default function AdminBrandAssetsPage() {
 
           <div className="md:col-span-2 space-y-3">
             <p className="text-xs text-muted-foreground">
-              Existing colours
+              Existing colours — drag to reorder
             </p>
-            {colors.length === 0 ? (
+            {orderedColors.length === 0 ? (
               <p className="text-xs text-muted-foreground">No colours defined yet.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {colors.map(color => (
+                {orderedColors.map((color) => (
                   <div
                     key={color.id}
-                    className={`border rounded-md p-2 flex flex-col gap-2 bg-background/40 ${
+                    draggable
+                    onDragStart={(e) => handleColorDragStart(e, color.id)}
+                    onDragOver={(e) => handleColorDragOver(e, color.id)}
+                    onDragLeave={handleColorDragLeave}
+                    onDrop={(e) => handleColorDrop(e, color.id)}
+                    onDragEnd={handleColorDragEnd}
+                    className={`border rounded-md p-2 flex flex-col gap-2 bg-background/40 cursor-grab active:cursor-grabbing transition-shadow ${
                       editingColorId === color.id ? 'border-primary ring-1 ring-primary' : 'border-border'
+                    } ${draggedColorId === color.id ? 'opacity-50' : ''} ${
+                      dragOverColorId === color.id ? 'ring-2 ring-primary/50' : ''
                     }`}
                   >
-                    <div className="h-10 w-full rounded-sm" style={{ backgroundColor: color.hex || '#000000' }} />
+                    <div className="flex items-center gap-1">
+                      <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="h-10 flex-1 rounded-sm" style={{ backgroundColor: color.hex || '#000000' }} />
+                    </div>
                     <div className="space-y-0.5">
-                      <p className="text-xs font-medium text-white">{color.name}</p>
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="text-xs font-medium text-white">{color.name}</p>
+                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          {(color.colorCategory || 'primary') === 'primary' ? 'Primary' : 'Secondary'}
+                        </span>
+                      </div>
                       <p className="text-[11px] text-muted-foreground">{color.hex}</p>
                       {color.usage && (
                         <p className="text-[11px] text-muted-foreground line-clamp-2">{color.usage}</p>
@@ -597,6 +704,12 @@ export default function AdminBrandAssetsPage() {
                   </div>
                 ))}
               </div>
+            )}
+            {savingOrder && (
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Saving order…
+              </p>
             )}
           </div>
         </div>

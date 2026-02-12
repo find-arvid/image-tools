@@ -109,6 +109,8 @@ export async function POST(request: NextRequest) {
       hex: body.hex,
       rgb: body.rgb,
       usage: body.usage,
+      colorCategory: body.colorCategory,
+      order: body.order ?? (body.type === 'color' ? 999999 : undefined),
       googleFontUrl: body.googleFontUrl,
       downloadR2Key: body.downloadR2Key,
       downloadUrl: body.downloadUrl,
