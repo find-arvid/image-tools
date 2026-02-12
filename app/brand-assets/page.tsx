@@ -144,6 +144,7 @@ function BrandAssetsContent() {
   const [dimensions, setDimensions] = useState<Record<string, { width: number; height: number }>>({});
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [logoView, setLogoView] = useState<'list' | 'cards'>('cards');
+  const [logoSort, setLogoSort] = useState<'name' | 'format'>('name');
 
   const copyHex = (hex: string) => {
     if (!hex) return;
@@ -210,6 +211,18 @@ function BrandAssetsContent() {
   const displayBrand =
     BRAND_LABELS[brand.toLowerCase() as keyof typeof BRAND_LABELS] ?? 'Find.co';
 
+  const sortedLogos = [...assetsByType.logo].sort((a, b) => {
+    if (logoSort === 'name') {
+      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+    }
+    const fa = (a.format || '').toLowerCase();
+    const fb = (b.format || '').toLowerCase();
+    if (fa && fb) return fa.localeCompare(fb);
+    if (fa && !fb) return -1;
+    if (!fa && fb) return 1;
+    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+  });
+
   return (
     <main className="min-h-screen w-full max-w-6xl mx-auto px-4 py-10 space-y-12">
       <header className="space-y-4">
@@ -230,27 +243,52 @@ function BrandAssetsContent() {
 
       {/* Logos */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold text-white">Logos</h2>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant={logoView === 'cards' ? 'default' : 'outline'}
-              className="px-3"
-              onClick={() => setLogoView('cards')}
-            >
-              Cards
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant={logoView === 'list' ? 'default' : 'outline'}
-              className="px-3"
-              onClick={() => setLogoView('list')}
-            >
-              List
-            </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <span>Sort by</span>
+              <div className="inline-flex rounded-md border border-border bg-card/60 p-0.5">
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={logoSort === 'name' ? 'default' : 'ghost'}
+                  className="h-6 px-2 text-[11px]"
+                  onClick={() => setLogoSort('name')}
+                >
+                  Name
+                </Button>
+                <Button
+                  type="button"
+                  size="xs"
+                  variant={logoSort === 'format' ? 'default' : 'ghost'}
+                  className="h-6 px-2 text-[11px]"
+                  onClick={() => setLogoSort('format')}
+                >
+                  Format
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant={logoView === 'cards' ? 'default' : 'outline'}
+                className="px-3"
+                onClick={() => setLogoView('cards')}
+              >
+                Cards
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={logoView === 'list' ? 'default' : 'outline'}
+                className="px-3"
+                onClick={() => setLogoView('list')}
+              >
+                List
+              </Button>
+            </div>
           </div>
         </div>
         {loading ? (
@@ -330,7 +368,7 @@ function BrandAssetsContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    {assetsByType.logo.map((logo, index) => {
+                    {sortedLogos.map((logo, index) => {
                       const dim = dimensions[logo.id];
                       const res =
                         dim?.width && dim.height
@@ -411,7 +449,7 @@ function BrandAssetsContent() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {assetsByType.logo.map((logo, index) => {
+                {sortedLogos.map((logo, index) => {
                   const dim = dimensions[logo.id];
                   const res =
                     dim?.width && dim.height

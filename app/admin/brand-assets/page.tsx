@@ -15,14 +15,21 @@ export default function AdminBrandAssetsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Upload state
-  const [uploading, setUploading] = useState(false);
-  const [uploadType, setUploadType] = useState<BrandAssetType>('logo');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [assetName, setAssetName] = useState('');
-  const [assetDescription, setAssetDescription] = useState('');
-  const [assetTags, setAssetTags] = useState('');
-  const [assetVariants, setAssetVariants] = useState('');
+  // Logo upload state
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoName, setLogoName] = useState('');
+  const [logoDescription, setLogoDescription] = useState('');
+  const [logoTags, setLogoTags] = useState('');
+  const [logoVariants, setLogoVariants] = useState('');
+  // Other image upload state (icons, project logos)
+  const [otherUploading, setOtherUploading] = useState(false);
+  const [otherType, setOtherType] = useState<BrandAssetType>('icon');
+  const [otherFile, setOtherFile] = useState<File | null>(null);
+  const [otherName, setOtherName] = useState('');
+  const [otherDescription, setOtherDescription] = useState('');
+  const [otherTags, setOtherTags] = useState('');
+  const [otherVariants, setOtherVariants] = useState('');
 
   // Colour form
   const [colorName, setColorName] = useState('');
@@ -56,10 +63,30 @@ export default function AdminBrandAssetsPage() {
   const [logoEditVariants, setLogoEditVariants] = useState('');
   const [savingLogoEdit, setSavingLogoEdit] = useState(false);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const {
+    getRootProps: getLogoRootProps,
+    getInputProps: getLogoInputProps,
+    isDragActive: isLogoDragActive,
+  } = useDropzone({
     onDrop: acceptedFiles => {
       if (acceptedFiles.length > 0) {
-        setSelectedFile(acceptedFiles[0]);
+        setLogoFile(acceptedFiles[0]);
+      }
+    },
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.svg'],
+    },
+    maxFiles: 1,
+  });
+
+  const {
+    getRootProps: getOtherRootProps,
+    getInputProps: getOtherInputProps,
+    isDragActive: isOtherDragActive,
+  } = useDropzone({
+    onDrop: acceptedFiles => {
+      if (acceptedFiles.length > 0) {
+        setOtherFile(acceptedFiles[0]);
       }
     },
     accept: {
@@ -202,6 +229,86 @@ export default function AdminBrandAssetsPage() {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const uploadLogo = async () => {
+    if (!logoFile) return;
+    setLogoUploading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', logoFile);
+      formData.append('type', 'logo');
+      formData.append('brand', selectedBrand);
+      if (logoName.trim()) formData.append('name', logoName.trim());
+      if (logoDescription.trim()) formData.append('description', logoDescription.trim());
+      if (logoTags.trim()) formData.append('tags', logoTags.trim());
+      if (logoVariants.trim()) formData.append('variants', logoVariants.trim());
+
+      const res = await fetch('/api/brand-assets/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || body.details || `Upload failed: ${res.status}`);
+      }
+
+      await loadAssets();
+
+      setLogoFile(null);
+      setLogoName('');
+      setLogoDescription('');
+      setLogoTags('');
+      setLogoVariants('');
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const uploadOtherImage = async () => {
+    if (!otherFile) return;
+    setOtherUploading(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', otherFile);
+      formData.append('type', otherType);
+      formData.append('brand', selectedBrand);
+      if (otherName.trim()) formData.append('name', otherName.trim());
+      if (otherDescription.trim()) formData.append('description', otherDescription.trim());
+      if (otherTags.trim()) formData.append('tags', otherTags.trim());
+      if (otherVariants.trim()) formData.append('variants', otherVariants.trim());
+
+      const res = await fetch('/api/brand-assets/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || body.details || `Upload failed: ${res.status}`);
+      }
+
+      await loadAssets();
+
+      setOtherFile(null);
+      setOtherName('');
+      setOtherDescription('');
+      setOtherTags('');
+      setOtherVariants('');
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setOtherUploading(false);
     }
   };
 
@@ -481,10 +588,13 @@ export default function AdminBrandAssetsPage() {
   const logos = assets.filter(a => a.type === 'logo');
   const colors = assets.filter(a => a.type === 'color');
   const fonts = assets.filter(a => a.type === 'font');
+  const icons = assets.filter(a => a.type === 'icon');
+  const projectLogos = assets.filter(a => a.type === 'project-logo');
+  const imageAssets = [...logos, ...icons, ...projectLogos];
   const allTags = Array.from(
     new Set(
-      logos
-        .flatMap(logo => logo.tags ?? [])
+      imageAssets
+        .flatMap(asset => asset.tags ?? [])
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0),
     ),
@@ -537,14 +647,24 @@ export default function AdminBrandAssetsPage() {
     }
   };
 
-  const toggleTagInInput = (tag: string) => {
-    const current = assetTags
+  const toggleTagInLogoInput = (tag: string) => {
+    const current = logoTags
       .split(',')
       .map(t => t.trim())
       .filter(t => t.length > 0);
     const exists = current.includes(tag);
     const next = exists ? current.filter(t => t !== tag) : [...current, tag];
-    setAssetTags(next.join(', '));
+    setLogoTags(next.join(', '));
+  };
+
+  const toggleTagInOtherInput = (tag: string) => {
+    const current = otherTags
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t.length > 0);
+    const exists = current.includes(tag);
+    const next = exists ? current.filter(t => t !== tag) : [...current, tag];
+    setOtherTags(next.join(', '));
   };
 
   return (
@@ -582,34 +702,24 @@ export default function AdminBrandAssetsPage() {
         <p className="text-sm text-red-400">{error}</p>
       )}
 
-      {/* Upload logos / icons / project logos */}
+      {/* Upload logos */}
       <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
-        <h2 className="text-lg font-semibold text-white">File assets (logos, icons, project logos)</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-white">Logos</h2>
+          <p className="text-xs text-muted-foreground">
+            These files power the Logos section on the public brand assets page.
+          </p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
-            <label className="block text-xs font-medium text-muted-foreground mb-1">
-              Asset type
-            </label>
-            <select
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-              value={uploadType}
-              onChange={e => setUploadType(e.target.value as BrandAssetType)}
-            >
-              <option value="logo">Logo</option>
-              <option value="icon">Icon</option>
-              <option value="project-logo">Project logo</option>
-              <option value="color" disabled>Colour (use colour form below)</option>
-              <option value="font" disabled>Font (coming later)</option>
-            </select>
-
             <div className="space-y-1">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
                 Name
               </label>
               <input
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                value={assetName}
-                onChange={e => setAssetName(e.target.value)}
+                value={logoName}
+                onChange={e => setLogoName(e.target.value)}
                 placeholder="e.g. Webo logo – full colour horizontal"
               />
             </div>
@@ -620,9 +730,9 @@ export default function AdminBrandAssetsPage() {
               </label>
               <textarea
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground min-h-[60px]"
-                value={assetDescription}
-                onChange={e => setAssetDescription(e.target.value)}
-                placeholder="Optional: when and where to use this asset"
+                value={logoDescription}
+                onChange={e => setLogoDescription(e.target.value)}
+                placeholder="Optional: when and where to use this logo"
               />
             </div>
 
@@ -632,14 +742,14 @@ export default function AdminBrandAssetsPage() {
               </label>
               <input
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                value={assetTags}
-                onChange={e => setAssetTags(e.target.value)}
+                value={logoTags}
+                onChange={e => setLogoTags(e.target.value)}
                 placeholder="Comma-separated, e.g. dark, horizontal, mono"
               />
               {allTags.length > 0 && (
                 <div className="flex flex-wrap gap-1 pt-1">
                   {allTags.map(tag => {
-                    const current = assetTags
+                    const current = logoTags
                       .split(',')
                       .map(t => t.trim())
                       .filter(t => t.length > 0);
@@ -648,7 +758,7 @@ export default function AdminBrandAssetsPage() {
                       <button
                         key={tag}
                         type="button"
-                        onClick={() => toggleTagInInput(tag)}
+                        onClick={() => toggleTagInLogoInput(tag)}
                         className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
                           active
                             ? 'bg-white text-black border-white'
@@ -669,9 +779,331 @@ export default function AdminBrandAssetsPage() {
               </label>
               <input
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                value={assetVariants}
-                onChange={e => setAssetVariants(e.target.value)}
+                value={logoVariants}
+                onChange={e => setLogoVariants(e.target.value)}
                 placeholder="Comma-separated, e.g. full-colour, mono"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <label className="block text-xs font-medium text-muted-foreground mb-1">
+              Logo file
+            </label>
+            <div
+              {...getLogoRootProps()}
+              className={`flex items-center justify-center border border-dashed rounded-md px-4 py-8 text-sm cursor-pointer ${
+                isLogoDragActive ? 'border-white/60 bg-white/5' : 'border-border'
+              }`}
+            >
+              <input {...getLogoInputProps()} />
+              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                <Upload className="h-5 w-5" />
+                {logoFile ? (
+                  <span>{logoFile.name}</span>
+                ) : (
+                  <span>Drag &amp; drop or click to select a logo image</span>
+                )}
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              onClick={uploadLogo}
+              disabled={!logoFile || logoUploading}
+              className="mt-2"
+            >
+              {logoUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading…
+                </>
+              ) : (
+                'Upload logo'
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Existing logos overview */}
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading existing logos…</p>
+        ) : logos.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No logos uploaded yet.</p>
+        ) : (
+          <div className="pt-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-sm font-medium text-white/80">Existing logos</h3>
+              <p className="text-xs text-muted-foreground">
+                Click edit to change logo name, description or tags.
+              </p>
+            </div>
+            <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+              <table className="min-w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr className="text-left">
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">
+                      Preview
+                    </th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">
+                      Name &amp; details
+                    </th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground text-right">
+                      Edit
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logos.map((logo) => (
+                    <tr key={logo.id} className="border-t border-border/60">
+                      <td className="px-3 py-2 align-middle">
+                        {logo.publicUrl && (
+                          <div className="h-10 w-20 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={logo.publicUrl}
+                              alt={logo.name}
+                              className="max-h-full max-w-full object-contain"
+                            />
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-white">{logo.name}</span>
+                          {logo.description && (
+                            <span className="text-[11px] text-muted-foreground line-clamp-2">
+                              {logo.description}
+                            </span>
+                          )}
+                          {logo.tags && logo.tags.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {logo.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 align-middle text-right">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2"
+                          onClick={() => setLogoToEdit(logo)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {logoToEdit && (
+              <div className="mt-4 border border-border rounded-lg bg-card/70 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">
+                      Edit logo details
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Updating text only – the file stays the same.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setLogoToEdit(null)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Name
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                        value={logoEditName}
+                        onChange={e => setLogoEditName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground min-h-[60px]"
+                        value={logoEditDescription}
+                        onChange={e => setLogoEditDescription(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Tags
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                        value={logoEditTags}
+                        onChange={e => setLogoEditTags(e.target.value)}
+                        placeholder="Comma-separated, e.g. dark, horizontal, mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                        Variants
+                      </label>
+                      <input
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                        value={logoEditVariants}
+                        onChange={e => setLogoEditVariants(e.target.value)}
+                        placeholder="Comma-separated, e.g. full-colour, mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setLogoToEdit(null)}
+                    disabled={savingLogoEdit}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleSaveLogoEdit}
+                    disabled={savingLogoEdit}
+                  >
+                    {savingLogoEdit ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving…
+                      </>
+                    ) : (
+                      'Save changes'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Icons & Project logos */}
+      <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-white">Icons &amp; Project Logos</h2>
+          <p className="text-xs text-muted-foreground">
+            These files power the Icons &amp; Project Logos table on the public page.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Asset type
+              </label>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                value={otherType}
+                onChange={e => setOtherType(e.target.value as BrandAssetType)}
+              >
+                <option value="icon">Icon</option>
+                <option value="project-logo">Project logo</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Name
+              </label>
+              <input
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                value={otherName}
+                onChange={e => setOtherName(e.target.value)}
+                placeholder="e.g. Webo favicon"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Description
+              </label>
+              <textarea
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground min-h-[60px]"
+                value={otherDescription}
+                onChange={e => setOtherDescription(e.target.value)}
+                placeholder="Optional: when and where to use this asset"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Tags
+              </label>
+              <input
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                value={otherTags}
+                onChange={e => setOtherTags(e.target.value)}
+                placeholder="Comma-separated, e.g. app icon, mono"
+              />
+              {allTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {allTags.map(tag => {
+                    const current = otherTags
+                      .split(',')
+                      .map(t => t.trim())
+                      .filter(t => t.length > 0);
+                    const active = current.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTagInOtherInput(tag)}
+                        className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+                          active
+                            ? 'bg-white text-black border-white'
+                            : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted/60'
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Variants
+              </label>
+              <input
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                value={otherVariants}
+                onChange={e => setOtherVariants(e.target.value)}
+                placeholder="Comma-separated, e.g. square, mono"
               />
             </div>
           </div>
@@ -681,16 +1113,16 @@ export default function AdminBrandAssetsPage() {
               File
             </label>
             <div
-              {...getRootProps()}
+              {...getOtherRootProps()}
               className={`flex items-center justify-center border border-dashed rounded-md px-4 py-8 text-sm cursor-pointer ${
-                isDragActive ? 'border-white/60 bg-white/5' : 'border-border'
+                isOtherDragActive ? 'border-white/60 bg-white/5' : 'border-border'
               }`}
             >
-              <input {...getInputProps()} />
+              <input {...getOtherInputProps()} />
               <div className="flex flex-col items-center gap-2 text-muted-foreground">
                 <Upload className="h-5 w-5" />
-                {selectedFile ? (
-                  <span>{selectedFile.name}</span>
+                {otherFile ? (
+                  <span>{otherFile.name}</span>
                 ) : (
                   <span>Drag &amp; drop or click to select an image</span>
                 )}
@@ -699,21 +1131,94 @@ export default function AdminBrandAssetsPage() {
 
             <Button
               type="button"
-              onClick={handleFileUpload}
-              disabled={!selectedFile || uploading}
+              onClick={uploadOtherImage}
+              disabled={!otherFile || otherUploading}
               className="mt-2"
             >
-              {uploading ? (
+              {otherUploading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Uploading…
                 </>
               ) : (
-                'Upload asset'
+                'Upload image'
               )}
             </Button>
           </div>
         </div>
+
+        {/* Existing icons & project logos */}
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Loading existing image assets…</p>
+        ) : icons.length === 0 && projectLogos.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No icons or project logos uploaded yet.</p>
+        ) : (
+          <div className="pt-4 space-y-3">
+            <h3 className="text-sm font-medium text-white/80">
+              Existing icons &amp; project logos
+            </h3>
+            <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+              <table className="min-w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr className="text-left">
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">
+                      Preview
+                    </th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">
+                      Name
+                    </th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">
+                      Type
+                    </th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">
+                      Tags
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...icons, ...projectLogos].map((asset) => (
+                    <tr key={asset.id} className="border-t border-border/60">
+                      <td className="px-3 py-2 align-middle">
+                        {asset.publicUrl && (
+                          <div className="h-10 w-10 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={asset.publicUrl}
+                              alt={asset.name}
+                              className="max-h-full max-w-full object-contain"
+                            />
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        <span className="text-xs font-medium text-white truncate">
+                          {asset.name}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
+                        {asset.type === 'icon' ? 'Icon' : 'Project logo'}
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        {asset.tags && asset.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {asset.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Font assets */}
@@ -1141,173 +1646,6 @@ export default function AdminBrandAssetsPage() {
         </div>
       )}
 
-      {/* Simple overview of latest logos */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">Latest logos</h2>
-          <p className="text-xs text-muted-foreground">
-            Click edit to change logo name, description or tags.
-          </p>
-        </div>
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : logos.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No logos uploaded yet.</p>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {logos.slice(0, 6).map(logo => (
-                <div
-                  key={logo.id}
-                  className="border border-border rounded-md p-2 bg-background/40 flex flex-col gap-2"
-                >
-                  {logo.publicUrl && (
-                    <div className="relative w-full aspect-video bg-muted/20 rounded-sm overflow-hidden flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={logo.publicUrl}
-                        alt={logo.name}
-                        className="max-h-full max-w-full object-contain"
-                      />
-                    </div>
-                  )}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="space-y-0.5">
-                      <p className="text-xs font-medium text-white truncate">{logo.name}</p>
-                      {logo.description && (
-                        <p className="text-[11px] text-muted-foreground line-clamp-2">
-                          {logo.description}
-                        </p>
-                      )}
-                      {logo.tags && logo.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {logo.tags.map(tag => (
-                            <span
-                              key={tag}
-                              className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2"
-                      onClick={() => setLogoToEdit(logo)}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {logoToEdit && (
-              <div className="mt-4 border border-border rounded-lg bg-card/70 p-4 space-y-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-sm font-semibold text-white">
-                      Edit logo details
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Updating text only – the file stays the same.
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setLogoToEdit(null)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <div className="space-y-1">
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
-                        Name
-                      </label>
-                      <input
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                        value={logoEditName}
-                        onChange={e => setLogoEditName(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
-                        Description
-                      </label>
-                      <textarea
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground min-h-[60px]"
-                        value={logoEditDescription}
-                        onChange={e => setLogoEditDescription(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="space-y-1">
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
-                        Tags
-                      </label>
-                      <input
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                        value={logoEditTags}
-                        onChange={e => setLogoEditTags(e.target.value)}
-                        placeholder="Comma-separated, e.g. dark, horizontal, mono"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
-                        Variants
-                      </label>
-                      <input
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-                        value={logoEditVariants}
-                        onChange={e => setLogoEditVariants(e.target.value)}
-                        placeholder="Comma-separated, e.g. full-colour, mono"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setLogoToEdit(null)}
-                    disabled={savingLogoEdit}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleSaveLogoEdit}
-                    disabled={savingLogoEdit}
-                  >
-                    {savingLogoEdit ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Saving…
-                      </>
-                    ) : (
-                      'Save changes'
-                    )}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-      </section>
     </main>
   );
 }
