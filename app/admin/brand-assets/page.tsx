@@ -459,6 +459,23 @@ export default function AdminBrandAssetsPage() {
   const logos = assets.filter(a => a.type === 'logo');
   const colors = assets.filter(a => a.type === 'color');
   const fonts = assets.filter(a => a.type === 'font');
+  const allTags = Array.from(
+    new Set(
+      logos.flatMap(logo => Array.isArray(logo.tags) ? logo.tags : (typeof logo.tags === 'string' ? logo.tags.split(',') : []))
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0),
+    ),
+  ).sort((a, b) => a.localeCompare(b));
+
+  const toggleTagInInput = (tag: string) => {
+    const current = assetTags
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t.length > 0);
+    const exists = current.includes(tag);
+    const next = exists ? current.filter(t => t !== tag) : [...current, tag];
+    setAssetTags(next.join(', '));
+  };
 
   return (
     <main className="min-h-screen w-full max-w-6xl mx-auto px-4 py-10 space-y-10">
@@ -549,6 +566,31 @@ export default function AdminBrandAssetsPage() {
                 onChange={e => setAssetTags(e.target.value)}
                 placeholder="Comma-separated, e.g. dark, horizontal, mono"
               />
+              {allTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {allTags.map(tag => {
+                    const current = assetTags
+                      .split(',')
+                      .map(t => t.trim())
+                      .filter(t => t.length > 0);
+                    const active = current.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTagInInput(tag)}
+                        className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+                          active
+                            ? 'bg-white text-black border-white'
+                            : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted/60'
+                        }`}
+                      >
+                        {tag}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="space-y-1">

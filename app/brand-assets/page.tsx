@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState, type SyntheticEvent, type MouseEvent } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Copy, Download } from 'lucide-react';
+import { Copy, Download, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { BrandAsset, BrandAssetType } from '@/lib/brand-assets-database';
@@ -19,6 +19,24 @@ const initialSections: SectionedAssets = {
 };
 
 const BRANDS = ['find.co', 'Webopedia', 'CCN', 'CryptoManiaks'] as const;
+
+function hexToRgba(hex: string, alpha: number): string {
+  let value = hex.trim().replace('#', '');
+  if (value.length === 3) {
+    value = value
+      .split('')
+      .map((c) => c + c)
+      .join('');
+  }
+  if (value.length !== 6) {
+    return `rgba(255, 255, 255, ${alpha})`;
+  }
+  const num = parseInt(value, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 function getContrastColor(hex: string): '#000000' | '#ffffff' {
   let value = hex.trim().replace('#', '');
@@ -48,10 +66,20 @@ type ColorCardProps = {
 };
 
 function ColorCard({ color, hex, isCopied, onCopy, variant }: ColorCardProps) {
-  // Only the copy button triggers copy; card itself is static.
+  // Only the copy button triggers copy; card click just highlights.
+  const [isHighlighted, setIsHighlighted] = useState(false);
+
+  const triggerHighlight = () => {
+    setIsHighlighted(true);
+    setTimeout(() => {
+      setIsHighlighted(false);
+    }, 2000);
+  };
+
   const handleCopyClick = (e: MouseEvent) => {
     e.stopPropagation();
     onCopy(hex);
+    triggerHighlight();
   };
 
   const displayHex = (color.hex || hex).toUpperCase();
@@ -60,6 +88,11 @@ function ColorCard({ color, hex, isCopied, onCopy, variant }: ColorCardProps) {
   return (
     <div
       className="relative border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 h-full hover:border-muted-foreground/30 transition-colors"
+      onClick={triggerHighlight}
+      style={{
+        borderColor: isHighlighted ? hex : undefined,
+        backgroundColor: isHighlighted ? hexToRgba(hex, 0.1) : undefined,
+      }}
     >
       <div
         className={`relative overflow-hidden ${variant === 'primary' ? 'h-32' : 'h-16'} w-full rounded-md border-2 border-transparent flex items-center justify-center`}
@@ -76,13 +109,12 @@ function ColorCard({ color, hex, isCopied, onCopy, variant }: ColorCardProps) {
           }}
         >
           <span className="font-mono">{displayHex}</span>
-          <Copy className="w-3.5 h-3.5" />
+          {isCopied ? (
+            <Check className="w-3.5 h-3.5" />
+          ) : (
+            <Copy className="w-3.5 h-3.5" />
+          )}
         </button>
-        {isCopied && (
-          <span className="absolute top-2 left-2 inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white bg-black/70">
-            Copied!
-          </span>
-        )}
       </div>
       <div className="flex-1 flex flex-col gap-2">
         <p className="font-semibold text-base text-white">{color.name}</p>
@@ -104,12 +136,13 @@ function BrandAssetsContent() {
   const [error, setError] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState<Record<string, { width: number; height: number }>>({});
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
+  const [logoView, setLogoView] = useState<'list' | 'cards'>('list');
 
   const copyHex = (hex: string) => {
     if (!hex) return;
     navigator.clipboard.writeText(hex);
     setCopiedHex(hex);
-    setTimeout(() => setCopiedHex(null), 1500);
+    setTimeout(() => setCopiedHex(null), 2000);
   };
 
   useEffect(() => {
@@ -210,68 +243,191 @@ function BrandAssetsContent() {
 
       {/* Logos */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-white">Logos</h2>
-        {loading ? (
-          <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
-            <table className="min-w-full text-sm">
-              <thead className="bg-muted/40">
-                <tr className="text-left">
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Preview</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Name</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Format</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Resolution</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">File size</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Variants</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground text-right">Download</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[1, 2, 3].map((i) => (
-                  <tr key={i} className="border-t border-border/60">
-                    <td className="px-3 py-2 align-middle">
-                      <Skeleton className="h-10 w-20" />
-                    </td>
-                    <td className="px-3 py-2 align-middle">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="mt-1 h-3 w-24" />
-                    </td>
-                    <td className="px-3 py-2 align-middle">
-                      <Skeleton className="h-3 w-12" />
-                    </td>
-                    <td className="px-3 py-2 align-middle">
-                      <Skeleton className="h-3 w-16" />
-                    </td>
-                    <td className="px-3 py-2 align-middle">
-                      <Skeleton className="h-3 w-10" />
-                    </td>
-                    <td className="px-3 py-2 align-middle">
-                      <Skeleton className="h-3 w-20" />
-                    </td>
-                    <td className="px-3 py-2 align-middle text-right">
-                      <Skeleton className="h-8 w-20 ml-auto" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold text-white">Logos</h2>
+          <div className="inline-flex items-center gap-1 rounded-full border border-border bg-card/60 p-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setLogoView('list')}
+              className={`px-3 py-1 rounded-full transition-colors ${
+                logoView === 'list'
+                  ? 'bg-muted text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              List
+            </button>
+            <button
+              type="button"
+              onClick={() => setLogoView('cards')}
+              className={`px-3 py-1 rounded-full transition-colors ${
+                logoView === 'cards'
+                  ? 'bg-muted text-white'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Cards
+            </button>
           </div>
+        </div>
+        {loading ? (
+          logoView === 'list' ? (
+            <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+              <table className="min-w-full text-sm">
+                <thead className="bg-muted/40">
+                  <tr className="text-left">
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Preview</th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Name</th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Format</th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Resolution</th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground">File size</th>
+                    <th className="px-3 py-2 font-medium text-xs text-muted-foreground text-right">Download</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[1, 2, 3].map((i) => (
+                    <tr key={i} className="border-t border-border/60">
+                      <td className="px-3 py-2 align-middle">
+                        <Skeleton className="h-10 w-20" />
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="mt-1 h-3 w-24" />
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        <Skeleton className="h-3 w-12" />
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        <Skeleton className="h-3 w-16" />
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        <Skeleton className="h-3 w-10" />
+                      </td>
+                      <td className="px-3 py-2 align-middle text-right">
+                        <Skeleton className="h-8 w-20 ml-auto" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3"
+                >
+                  <Skeleton className="h-24 w-full rounded-md" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-40" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-8 w-24" />
+                </div>
+              ))}
+            </div>
+          )
         ) : assetsByType.logo.length === 0 ? (
           <p className="text-muted-foreground text-sm">No logos added yet.</p>
         ) : (
-          <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
-            <table className="min-w-full text-sm">
-              <thead className="bg-muted/40">
-                <tr className="text-left">
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Preview</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Name</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Format</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Resolution</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">File size</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Variants</th>
-                  <th className="px-3 py-2 font-medium text-xs text-muted-foreground text-right">Download</th>
-                </tr>
-              </thead>
-              <tbody>
+          <>
+            {logoView === 'list' ? (
+              <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-muted/40">
+                    <tr className="text-left">
+                      <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Preview</th>
+                      <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Name</th>
+                      <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Format</th>
+                      <th className="px-3 py-2 font-medium text-xs text-muted-foreground">Resolution</th>
+                      <th className="px-3 py-2 font-medium text-xs text-muted-foreground">File size</th>
+                      <th className="px-3 py-2 font-medium text-xs text-muted-foreground text-right">Download</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {assetsByType.logo.map((logo, index) => {
+                      const dim = dimensions[logo.id];
+                      const res =
+                        dim?.width && dim.height
+                          ? `${dim.width} × ${dim.height}`
+                          : logo.width && logo.height
+                          ? `${logo.width} × ${logo.height}`
+                          : '—';
+                      return (
+                        <tr key={`${logo.id}-${index}`} className="border-t border-border/60">
+                          <td className="px-3 py-2 align-middle">
+                            {logo.publicUrl && (
+                              <div className="h-10 w-20 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={logo.publicUrl}
+                                  alt={logo.name}
+                                  className="max-h-full max-w-full object-contain"
+                                  onLoad={handleImageLoad(logo.id)}
+                                />
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 align-middle">
+                            <div className="flex flex-col">
+                              <span className="text-sm text-white">{logo.name}</span>
+                              {logo.description && (
+                                <span className="text-xs text-muted-foreground line-clamp-1">
+                                  {logo.description}
+                                </span>
+                              )}
+                              {logo.tags && logo.tags.length > 0 && (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {logo.tags.map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
+                            {logo.format ? (
+                              <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-mono uppercase">
+                                {logo.format.toUpperCase()}
+                              </span>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
+                            {res}
+                          </td>
+                          <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
+                            {formatBytes(logo.fileSizeBytes)}
+                          </td>
+                          <td className="px-3 py-2 align-middle text-right">
+                            {logo.publicUrl && (
+                              <Button asChild size="icon" variant="outline">
+                                <a
+                                  href={logo.publicUrl}
+                                  download
+                                  aria-label={`Download ${logo.name}`}
+                                >
+                                  <Download className="w-4 h-4" />
+                                </a>
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {assetsByType.logo.map((logo, index) => {
                   const dim = dimensions[logo.id];
                   const res =
@@ -281,51 +437,56 @@ function BrandAssetsContent() {
                       ? `${logo.width} × ${logo.height}`
                       : '—';
                   return (
-                    <tr key={`${logo.id}-${index}`} className="border-t border-border/60">
-                      <td className="px-3 py-2 align-middle">
+                    <div
+                      key={`${logo.id}-${index}`}
+                      className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3"
+                    >
+                      <div className="h-32 w-full bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
                         {logo.publicUrl && (
-                          <div className="h-10 w-20 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={logo.publicUrl}
-                              alt={logo.name}
-                              className="max-h-full max-w-full object-contain"
-                              onLoad={handleImageLoad(logo.id)}
-                            />
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={logo.publicUrl}
+                            alt={logo.name}
+                            className="max-h-full max-w-full object-contain"
+                            onLoad={handleImageLoad(logo.id)}
+                          />
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-white">{logo.name}</p>
+                        {logo.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {logo.description}
+                          </p>
+                        )}
+                        {logo.tags && logo.tags.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {logo.tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                              >
+                                {tag}
+                              </span>
+                            ))}
                           </div>
                         )}
-                      </td>
-                      <td className="px-3 py-2 align-middle">
-                        <div className="flex flex-col">
-                          <span className="text-sm text-white">{logo.name}</span>
-                          {logo.description && (
-                            <span className="text-xs text-muted-foreground line-clamp-1">
-                              {logo.description}
-                            </span>
-                          )}
+                      </div>
+                      <div className="mt-auto flex items-center justify-between text-[11px] text-muted-foreground">
+                        <div className="space-y-0.5">
+                          <div>
+                            <span className="font-semibold">Format: </span>
+                            {logo.format ? logo.format.toUpperCase() : '—'}
+                          </div>
+                          <div>
+                            <span className="font-semibold">Size: </span>
+                            {formatBytes(logo.fileSizeBytes)}
+                          </div>
+                          <div>
+                            <span className="font-semibold">Resolution: </span>
+                            {res}
+                          </div>
                         </div>
-                      </td>
-                      <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                        {logo.format ? (
-                          <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-mono uppercase">
-                            {logo.format.toUpperCase()}
-                          </span>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                        {res}
-                      </td>
-                      <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                        {formatBytes(logo.fileSizeBytes)}
-                      </td>
-                      <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                        {logo.variants && logo.variants.length > 0
-                          ? logo.variants.join(', ')
-                          : '—'}
-                      </td>
-                      <td className="px-3 py-2 align-middle text-right">
                         {logo.publicUrl && (
                           <Button asChild size="icon" variant="outline">
                             <a
@@ -337,13 +498,13 @@ function BrandAssetsContent() {
                             </a>
                           </Button>
                         )}
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            )}
+          </>
         )}
       </section>
 
