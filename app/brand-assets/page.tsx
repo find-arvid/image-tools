@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect, useState, type SyntheticEvent } from 'react';
+import { Suspense, useEffect, useState, type SyntheticEvent, type MouseEvent } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Copy, Download } from 'lucide-react';
@@ -19,6 +19,80 @@ const initialSections: SectionedAssets = {
 };
 
 const BRANDS = ['find.co', 'Webopedia', 'CCN', 'CryptoManiaks'] as const;
+
+function getContrastColor(hex: string): '#000000' | '#ffffff' {
+  let value = hex.trim().replace('#', '');
+  if (value.length === 3) {
+    value = value
+      .split('')
+      .map((c) => c + c)
+      .join('');
+  }
+  if (value.length !== 6) {
+    return '#ffffff';
+  }
+  const num = parseInt(value, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
+  return brightness > 186 ? '#000000' : '#ffffff';
+}
+
+type ColorCardProps = {
+  color: BrandAsset;
+  hex: string;
+  isCopied: boolean;
+  onCopy: (hex: string) => void;
+  variant: 'primary' | 'secondary';
+};
+
+function ColorCard({ color, hex, isCopied, onCopy, variant }: ColorCardProps) {
+  // Only the copy button triggers copy; card itself is static.
+  const handleCopyClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    onCopy(hex);
+  };
+
+  const displayHex = (color.hex || hex).toUpperCase();
+  const contrastColor = getContrastColor(hex);
+
+  return (
+    <div
+      className="relative border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 h-full hover:border-muted-foreground/30 transition-colors"
+    >
+      <div
+        className={`relative overflow-hidden ${variant === 'primary' ? 'h-32' : 'h-16'} w-full rounded-md border-2 border-transparent flex items-center justify-center`}
+        style={{ backgroundColor: hex }}
+      >
+        <button
+          type="button"
+          className="relative z-10 inline-flex items-center gap-2 rounded-md border bg-transparent px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+          onClick={handleCopyClick}
+          title={`Copy ${hex}`}
+          style={{
+            color: contrastColor,
+            borderColor: contrastColor,
+          }}
+        >
+          <span className="font-mono">{displayHex}</span>
+          <Copy className="w-3.5 h-3.5" />
+        </button>
+        {isCopied && (
+          <span className="absolute top-2 left-2 inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white bg-black/70">
+            Copied!
+          </span>
+        )}
+      </div>
+      <div className="flex-1 flex flex-col gap-2">
+        <p className="font-semibold text-base text-white">{color.name}</p>
+        {color.usage && (
+          <p className="text-sm text-muted-foreground">{color.usage}</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function BrandAssetsContent() {
   const searchParams = useSearchParams();
@@ -232,7 +306,13 @@ function BrandAssetsContent() {
                         </div>
                       </td>
                       <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                        {logo.format || '—'}
+                        {logo.format ? (
+                          <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-mono uppercase">
+                            {logo.format.toUpperCase()}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                       <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
                         {res}
@@ -304,53 +384,14 @@ function BrandAssetsContent() {
                     const hex = color.hex || '#000000';
                     const isCopied = copiedHex === hex;
                     return (
-                      <div
+                      <ColorCard
                         key={`${color.id}-${index}`}
-                        role="button"
-                        tabIndex={0}
-                        className="relative border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 cursor-pointer hover:border-muted-foreground/30 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background"
-                        onClick={() => copyHex(hex)}
-                        onKeyDown={(e) => e.key === 'Enter' && copyHex(hex)}
-                        title={`Copy ${hex}`}
-                      >
-                        <div
-                          className={`${variant === 'primary' ? 'h-32' : 'h-16'} w-full rounded-md border-2 border-transparent`}
-                          style={{ backgroundColor: hex }}
-                        >
-                          {isCopied && (
-                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium text-white bg-black/60 m-2">
-                              Copied!
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <p className="font-semibold text-base text-white">{color.name}</p>
-                          {color.usage && (
-                            <p className="text-sm text-muted-foreground">{color.usage}</p>
-                          )}
-                          <div className="mt-2 flex items-center justify-between gap-2">
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-2 rounded-md border border-border bg-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted/40 hover:text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyHex(hex);
-                              }}
-                              title={`Copy ${hex}`}
-                            >
-                              <span className="font-mono">
-                                {(color.hex || hex).toUpperCase()}
-                              </span>
-                              <Copy className="w-3.5 h-3.5" />
-                            </button>
-                            {color.rgb && (
-                              <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                                rgb({color.rgb})
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                        color={color}
+                        hex={hex}
+                        isCopied={isCopied}
+                        onCopy={copyHex}
+                        variant={variant}
+                      />
                     );
                   })}
                 </div>

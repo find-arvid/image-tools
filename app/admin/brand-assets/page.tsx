@@ -42,6 +42,8 @@ export default function AdminBrandAssetsPage() {
   const [fontGoogleUrl, setFontGoogleUrl] = useState('');
   const [fontDownloadUrl, setFontDownloadUrl] = useState('');
   const [editingFontId, setEditingFontId] = useState<string | null>(null);
+  const [fontToDelete, setFontToDelete] = useState<BrandAsset | null>(null);
+  const [isDeletingFont, setIsDeletingFont] = useState(false);
   const [orderedFonts, setOrderedFonts] = useState<BrandAsset[]>([]);
   const [draggedFontId, setDraggedFontId] = useState<string | null>(null);
   const [dragOverFontId, setDragOverFontId] = useState<string | null>(null);
@@ -372,6 +374,26 @@ export default function AdminBrandAssetsPage() {
     }
   };
 
+  const handleDeleteFont = async () => {
+    if (!fontToDelete) return;
+    try {
+      setIsDeletingFont(true);
+      setError(null);
+      const res = await fetch(`/api/brand-assets/${fontToDelete.id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 404) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || body.details || `Delete failed: ${res.status}`);
+      }
+      await loadAssets();
+      setFontToDelete(null);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to delete font');
+    } finally {
+      setIsDeletingFont(false);
+    }
+  };
+
   const handleCreateFont = async () => {
     if (!fontName.trim()) return;
 
@@ -675,26 +697,47 @@ export default function AdminBrandAssetsPage() {
                       draggedFontId === font.id ? 'opacity-50' : ''
                     } ${dragOverFontId === font.id ? 'ring-2 ring-primary/50' : ''}`}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-white">{font.name}</p>
-                        {font.usage && (
-                          <p className="text-xs text-muted-foreground line-clamp-3">
-                            {font.usage}
-                          </p>
-                        )}
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <div className="flex-1 h-8 rounded-sm bg-muted/10 flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">Aa</span>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2"
-                        onClick={() => setEditingFontId(font.id)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
                     </div>
-                    <div className="flex flex-wrap gap-2 mt-1">
+                    <div className="space-y-1 mt-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-medium text-white">{font.name}</p>
+                          {font.usage && (
+                            <p className="text-xs text-muted-foreground line-clamp-3">
+                              {font.usage}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2"
+                            onClick={() => setEditingFontId(font.id)}
+                            disabled={!!fontToDelete}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-destructive hover:text-destructive"
+                            onClick={() => setFontToDelete(font)}
+                            disabled={!!editingFontId}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
                       {font.googleFontUrl && (
                         <Button asChild size="sm" variant="outline">
                           <a href={font.googleFontUrl} target="_blank" rel="noreferrer">
@@ -932,6 +975,44 @@ export default function AdminBrandAssetsPage() {
                 disabled={isDeleting}
               >
                 {isDeleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete font confirmation modal */}
+      {fontToDelete && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full space-y-4">
+            <h3 className="text-lg font-semibold">Delete font</h3>
+            <p className="text-muted-foreground">
+              Are you sure you want to delete <span className="font-medium">{fontToDelete.name}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setFontToDelete(null)}
+                disabled={isDeletingFont}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteFont}
+                disabled={isDeletingFont}
+              >
+                {isDeletingFont ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Deleting…
