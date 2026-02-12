@@ -483,7 +483,8 @@ export default function AdminBrandAssetsPage() {
   const fonts = assets.filter(a => a.type === 'font');
   const allTags = Array.from(
     new Set(
-      logos.flatMap(logo => Array.isArray(logo.tags) ? logo.tags : (typeof logo.tags === 'string' ? logo.tags.split(',') : []))
+      logos
+        .flatMap(logo => logo.tags ?? [])
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0),
     ),
