@@ -647,62 +647,97 @@ export default function AdminBrandAssetsPage() {
             {orderedColors.length === 0 ? (
               <p className="text-xs text-muted-foreground">No colours defined yet.</p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {orderedColors.map((color) => (
-                  <div
-                    key={color.id}
-                    draggable
-                    onDragStart={(e) => handleColorDragStart(e, color.id)}
-                    onDragOver={(e) => handleColorDragOver(e, color.id)}
-                    onDragLeave={handleColorDragLeave}
-                    onDrop={(e) => handleColorDrop(e, color.id)}
-                    onDragEnd={handleColorDragEnd}
-                    className={`border rounded-md p-2 flex flex-col gap-2 bg-background/40 cursor-grab active:cursor-grabbing transition-shadow ${
-                      editingColorId === color.id ? 'border-primary ring-1 ring-primary' : 'border-border'
-                    } ${draggedColorId === color.id ? 'opacity-50' : ''} ${
-                      dragOverColorId === color.id ? 'ring-2 ring-primary/50' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-1">
-                      <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <div className="h-10 flex-1 rounded-sm" style={{ backgroundColor: color.hex || '#000000' }} />
+              <div className="space-y-4">
+                {(() => {
+                  const primary = orderedColors.filter(
+                    (c) => (c.colorCategory || 'primary') === 'primary'
+                  );
+                  const secondary = orderedColors.filter(
+                    (c) => (c.colorCategory || 'primary') === 'secondary'
+                  );
+
+                  const renderGrid = (items: BrandAsset[]) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {items.map((color) => (
+                        <div
+                          key={color.id}
+                          draggable
+                          onDragStart={(e) => handleColorDragStart(e, color.id)}
+                          onDragOver={(e) => handleColorDragOver(e, color.id)}
+                          onDragLeave={handleColorDragLeave}
+                          onDrop={(e) => handleColorDrop(e, color.id)}
+                          onDragEnd={handleColorDragEnd}
+                          className={`border rounded-md p-2 flex flex-col gap-2 bg-background/40 cursor-grab active:cursor-grabbing transition-shadow ${
+                            editingColorId === color.id ? 'border-primary ring-1 ring-primary' : 'border-border'
+                          } ${draggedColorId === color.id ? 'opacity-50' : ''} ${
+                            dragOverColorId === color.id ? 'ring-2 ring-primary/50' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-1">
+                            <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                            <div
+                              className="h-10 flex-1 rounded-sm"
+                              style={{ backgroundColor: color.hex || '#000000' }}
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className="text-xs font-medium text-white">{color.name}</p>
+                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                {(color.colorCategory || 'primary') === 'primary' ? 'Primary' : 'Secondary'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">{color.hex}</p>
+                            {color.usage && (
+                              <p className="text-[11px] text-muted-foreground line-clamp-2">
+                                {color.usage}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-1 mt-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2"
+                              onClick={() => setEditingColorId(color.id)}
+                              disabled={!!editingColorId && editingColorId !== color.id}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-destructive hover:text-destructive"
+                              onClick={() => setColorToDelete(color)}
+                              disabled={!!editingColorId}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="space-y-0.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <p className="text-xs font-medium text-white">{color.name}</p>
-                        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                          {(color.colorCategory || 'primary') === 'primary' ? 'Primary' : 'Secondary'}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-muted-foreground">{color.hex}</p>
-                      {color.usage && (
-                        <p className="text-[11px] text-muted-foreground line-clamp-2">{color.usage}</p>
+                  );
+
+                  return (
+                    <>
+                      {primary.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-white/80">Primary</p>
+                          {renderGrid(primary)}
+                        </div>
                       )}
-                    </div>
-                    <div className="flex gap-1 mt-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2"
-                        onClick={() => setEditingColorId(color.id)}
-                        disabled={!!editingColorId && editingColorId !== color.id}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-destructive hover:text-destructive"
-                        onClick={() => setColorToDelete(color)}
-                        disabled={!!editingColorId}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                      {secondary.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-white/80">Secondary</p>
+                          {renderGrid(secondary)}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
             {savingOrder && (
