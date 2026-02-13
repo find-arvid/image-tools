@@ -114,7 +114,7 @@ export default function Home() {
           </Card>
           <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-foreground/20">
             <div className="px-0">
-              <div className="w-full aspect-video bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center">
+              <div className="w-full aspect-video bg-gradient-to-br from-destructive to-destructive-600 rounded-lg flex items-center justify-center">
                 <div className="text-foreground text-4xl">▶</div>
               </div>
             </div>

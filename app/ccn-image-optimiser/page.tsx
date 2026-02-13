@@ -345,7 +345,7 @@ export default function Home() {
         {/* Article Name Step - Highest Priority */}
         {showArticleNameInput ? (
           <div ref={articleNameSectionRef} className="flex min-h-[calc(100vh-20rem)] items-center justify-center">
-            <div className="w-full max-w-md flex flex-col items-center gap-4 p-6 border border-border rounded-lg bg-card">
+            <div className="w-full max-w-md flex flex-col items-center gap-4 p-6 border border-card-border rounded-lg bg-card">
               <p className="text-sm font-medium">Name your image</p>
               <div className="text-xs text-muted-foreground text-left w-full space-y-2">
                 <p>Paste the article name into the box. We'll turn it into an optimised file name before download. Here's what happens:</p>
@@ -396,7 +396,7 @@ export default function Home() {
         ) : /* Crop Step */
         showCrop && imagePreview && !croppedImage ? (
           <div ref={cropSectionRef} className="flex min-h-[calc(100vh-20rem)] items-center justify-center flex-col gap-4">
-            <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-4 p-4 border border-border rounded-lg bg-card">
+            <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-4 p-4 border border-card-border rounded-lg bg-card">
               <div className="relative w-full" style={{ height: '400px' }}>
                 <Cropper
                   image={imagePreview}

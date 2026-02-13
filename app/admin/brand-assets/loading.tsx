@@ -14,7 +14,7 @@ export default function Loading() {
         </div>
       </header>
 
-      <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
+      <section className="space-y-4 border border-card-border rounded-lg p-4 bg-card/60">
         <Skeleton className="h-6 w-64" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-3">
@@ -30,7 +30,7 @@ export default function Loading() {
         </div>
       </section>
 
-      <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
+      <section className="space-y-4 border border-card-border rounded-lg p-4 bg-card/60">
         <Skeleton className="h-6 w-40" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-3">

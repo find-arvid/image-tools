@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { r2Client, R2_BUCKET_NAME, getR2PublicUrl } from '@/lib/r2-client';
-import { saveBrandAsset, type BrandAssetType, type BrandAsset } from '@/lib/brand-assets-database';
+import { saveBrandAsset, getBrandAssetsByBrandAndType, deleteBrandAsset, type BrandAssetType, type BrandAsset } from '@/lib/brand-assets-database';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!type || !['logo', 'icon', 'project-logo'].includes(type)) {
+    if (!type || !['logo', 'icon', 'project-logo', 'menu-logo'].includes(type)) {
       return NextResponse.json(
-        { error: 'Invalid type. Must be "logo", "icon" or "project-logo"' },
+        { error: 'Invalid type. Must be "logo", "icon", "project-logo" or "menu-logo"' },
         { status: 400 },
       );
     }
@@ -63,11 +63,21 @@ export async function POST(request: NextRequest) {
       : [];
     const brand = (brandRaw || 'find').toLowerCase().trim() || 'find';
 
+    // For menu-logo: only one per brand — remove existing menu-logos for this brand
+    if (type === 'menu-logo') {
+      const existing = await getBrandAssetsByBrandAndType(brand, 'menu-logo');
+      for (const a of existing) {
+        await deleteBrandAsset(a.id);
+      }
+    }
+
     // Generate unique ID and R2 key
     const id = uuidv4();
     const fileExtension = (file.name.split('.').pop() || 'png').toLowerCase();
     const safeExt = fileExtension === 'svg' ? 'svg' : fileExtension;
-    const r2Key = `brand-assets/${type}s/${id}.${safeExt}`;
+    const r2Key = type === 'menu-logo'
+      ? `brand-assets/menu-logos/${brand}-${id}.${safeExt}`
+      : `brand-assets/${type}s/${id}.${safeExt}`;
 
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();

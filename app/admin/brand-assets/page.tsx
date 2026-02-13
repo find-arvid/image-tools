@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, Loader2, Pencil, Trash2, GripVertical } from 'lucide-react';
@@ -155,6 +156,10 @@ export default function AdminBrandAssetsPage() {
   const [savingLogoEdit, setSavingLogoEdit] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  // Menu logo (shown in nav dropdown per brand)
+  const [menuLogoFile, setMenuLogoFile] = useState<File | null>(null);
+  const [menuLogoPreviewUrl, setMenuLogoPreviewUrl] = useState<string | null>(null);
+  const [menuLogoUploading, setMenuLogoUploading] = useState(false);
 
   useEffect(() => {
     if (logoFile && logoFile.type.startsWith('image/')) {
@@ -165,6 +170,28 @@ export default function AdminBrandAssetsPage() {
     setLogoPreviewUrl(null);
     return undefined;
   }, [logoFile]);
+
+  useEffect(() => {
+    if (menuLogoFile && menuLogoFile.type.startsWith('image/')) {
+      const url = URL.createObjectURL(menuLogoFile);
+      setMenuLogoPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setMenuLogoPreviewUrl(null);
+    return undefined;
+  }, [menuLogoFile]);
+
+  const {
+    getRootProps: getMenuLogoRootProps,
+    getInputProps: getMenuLogoInputProps,
+    isDragActive: isMenuLogoDragActive,
+  } = useDropzone({
+    onDrop: acceptedFiles => {
+      if (acceptedFiles.length > 0) setMenuLogoFile(acceptedFiles[0]);
+    },
+    accept: { 'image/*': ['.png', '.jpg', '.jpeg', '.webp', '.svg'] },
+    maxFiles: 1,
+  });
 
   const {
     getRootProps: getLogoRootProps,
@@ -224,6 +251,10 @@ export default function AdminBrandAssetsPage() {
 
   useEffect(() => {
     loadAssets();
+  }, [selectedBrand]);
+
+  useEffect(() => {
+    setMenuLogoFile(null);
   }, [selectedBrand]);
 
   // Sync ordered colors when assets load
@@ -300,6 +331,32 @@ export default function AdminBrandAssetsPage() {
       setFontPreviewUrl(null);
     }
   }, [editingFontId, assets]);
+
+  const uploadMenuLogo = async () => {
+    if (!menuLogoFile) return;
+    setMenuLogoUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', menuLogoFile);
+      formData.append('type', 'menu-logo');
+      formData.append('brand', selectedBrand);
+      formData.append('name', `Menu logo – ${selectedBrand}`);
+
+      const res = await fetch('/api/brand-assets/upload', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || body.details || `Upload failed: ${res.status}`);
+      }
+      await loadAssets();
+      setMenuLogoFile(null);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Menu logo upload failed');
+    } finally {
+      setMenuLogoUploading(false);
+    }
+  };
 
   const uploadLogo = async () => {
     if (!logoFile) return;
@@ -831,8 +888,117 @@ export default function AdminBrandAssetsPage() {
         <p className="text-sm text-red-400">{error}</p>
       )}
 
+      {/* Logo in site navigation (Brand assets dropdown) */}
+      <section className="space-y-4 border border-card-border rounded-lg p-4 bg-card/60">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Logo in menu</h2>
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+            This logo appears next to the brand name in the <strong>Brand assets</strong> dropdown in the main navigation. Upload one per brand; it will replace any existing menu logo for the selected brand.
+          </p>
+        </div>
+
+        <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Image guidelines
+          </h3>
+          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+            <li><strong className="text-foreground">Aspect ratio:</strong> Square (1∶1) works best; it is displayed in a square slot.</li>
+            <li><strong className="text-foreground">Size:</strong> At least 64×64 px (recommended 128×128 or larger for sharpness).</li>
+            <li><strong className="text-foreground">Format:</strong> SVG or PNG. Prefer PNG with transparent background so it looks good on any nav background.</li>
+            <li><strong className="text-foreground">Display size:</strong> Shown at 36×36 px in the dropdown; keep the mark simple and recognisable at small size.</li>
+          </ul>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">
+              Current menu logo for <span className="text-foreground capitalize">{selectedBrand}</span>
+            </p>
+            {(() => {
+              const menuLogo = assets.find(a => a.type === 'menu-logo');
+              const src = menuLogo?.publicUrl ?? (selectedBrand === 'find' ? '/Find-co-logo-green.svg' : null);
+              if (!src) {
+                return (
+                  <div className="flex h-[72px] items-center justify-center rounded-lg border border-dashed border-border text-sm text-muted-foreground">
+                    No menu logo set. Find.co uses the default static logo until you upload one.
+                  </div>
+                );
+              }
+              return (
+                <div className="flex items-center gap-3 p-3 rounded-lg border border-border bg-background/60">
+                  <div className="h-9 w-9 shrink-0 rounded-md overflow-hidden bg-muted/30 flex items-center justify-center">
+                    {src.startsWith('http') ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={src} alt="" className="h-full w-full object-contain" />
+                    ) : (
+                      <Image src={src} alt="" width={36} height={36} className="object-contain" />
+                    )}
+                  </div>
+                  <span className="text-xs text-muted-foreground truncate">
+                    {menuLogo?.name ?? 'Default'}
+                  </span>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-muted-foreground">Upload new menu logo</p>
+            {menuLogoFile ? (
+              <div className="relative border border-border rounded-md overflow-hidden bg-muted/20">
+                <div className="aspect-square flex items-center justify-center p-4 max-h-32">
+                  {menuLogoPreviewUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={menuLogoPreviewUrl}
+                      alt="Preview"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <span className="text-sm text-muted-foreground">{menuLogoFile.name}</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-border bg-background/60">
+                  <span className="text-xs text-muted-foreground truncate flex-1">{menuLogoFile.name}</span>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-destructive hover:text-destructive" onClick={() => setMenuLogoFile(null)}>
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div
+                {...getMenuLogoRootProps()}
+                className={`flex items-center justify-center border border-dashed rounded-md px-4 py-8 text-sm cursor-pointer ${
+                  isMenuLogoDragActive ? 'border-white/60 bg-white/5' : 'border-border'
+                }`}
+              >
+                <input {...getMenuLogoInputProps()} />
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <Upload className="h-5 w-5" />
+                  <span>Drag &amp; drop or click to select an image</span>
+                </div>
+              </div>
+            )}
+            <Button
+              type="button"
+              onClick={uploadMenuLogo}
+              disabled={!menuLogoFile || menuLogoUploading}
+            >
+              {menuLogoUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading…
+                </>
+              ) : (
+                'Upload menu logo'
+              )}
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* Upload logos */}
-      <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
+      <section className="space-y-4 border border-card-border rounded-lg p-4 bg-card/60">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">Logos</h2>
           <p className="text-xs text-muted-foreground">
@@ -957,7 +1123,7 @@ export default function AdminBrandAssetsPage() {
                 Drag to reorder. Click edit to change name, description or tags.
               </p>
             </div>
-            <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+            <div className="overflow-x-auto border border-card-border rounded-lg bg-card/60">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr className="text-left">
@@ -1046,7 +1212,7 @@ export default function AdminBrandAssetsPage() {
             )}
 
             {logoToEdit && (
-              <div className="mt-4 border border-border rounded-lg bg-card/70 p-4 space-y-3">
+              <div className="mt-4 border border-card-border rounded-lg bg-card/70 p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div>
                     <h3 className="text-sm font-semibold text-foreground">
@@ -1138,7 +1304,7 @@ export default function AdminBrandAssetsPage() {
       </section>
 
       {/* Icons & Project logos */}
-      <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
+      <section className="space-y-4 border border-card-border rounded-lg p-4 bg-card/60">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-foreground">Icons &amp; Project Logos</h2>
           <p className="text-xs text-muted-foreground">
@@ -1247,7 +1413,7 @@ export default function AdminBrandAssetsPage() {
             <h3 className="text-sm font-medium text-foreground/80">
               Existing icons &amp; project logos
             </h3>
-            <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+            <div className="overflow-x-auto border border-card-border rounded-lg bg-card/60">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr className="text-left">
@@ -1312,7 +1478,7 @@ export default function AdminBrandAssetsPage() {
       </section>
 
       {/* Font assets */}
-      <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
+      <section className="space-y-4 border border-card-border rounded-lg p-4 bg-card/60">
         <h2 className="text-lg font-semibold text-foreground">Fonts</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Font form */}
@@ -1514,7 +1680,7 @@ export default function AdminBrandAssetsPage() {
       </section>
 
       {/* Colour assets */}
-      <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
+      <section className="space-y-4 border border-card-border rounded-lg p-4 bg-card/60">
         <h2 className="text-lg font-semibold text-foreground">Colours</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-3">
@@ -1702,7 +1868,7 @@ export default function AdminBrandAssetsPage() {
       {/* Delete colour confirmation modal */}
       {colorToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full space-y-4">
+          <div className="bg-card border border-card-border rounded-lg p-6 max-w-md w-full space-y-4">
             <h3 className="text-lg font-semibold">Delete colour</h3>
             <p className="text-muted-foreground">
               Are you sure you want to delete <span className="font-medium">{colorToDelete.name}</span>? This action cannot be undone.
@@ -1740,7 +1906,7 @@ export default function AdminBrandAssetsPage() {
       {/* Delete font confirmation modal */}
       {fontToDelete && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full space-y-4">
+          <div className="bg-card border border-card-border rounded-lg p-6 max-w-md w-full space-y-4">
             <h3 className="text-lg font-semibold">Delete font</h3>
             <p className="text-muted-foreground">
               Are you sure you want to delete <span className="font-medium">{fontToDelete.name}</span>? This action cannot be undone.

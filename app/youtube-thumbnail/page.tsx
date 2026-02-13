@@ -520,7 +520,7 @@ export default function YouTubeThumbnail() {
               <div className="w-full lg:sticky lg:top-6 lg:self-start lg:h-fit">
               {combinedPreview ? (
                 <div ref={previewSectionRef} className="w-full">
-                  <div className="flex flex-col items-center gap-4 p-6 border border-border rounded-lg bg-card">
+                  <div className="flex flex-col items-center gap-4 p-6 border border-card-border rounded-lg bg-card">
                     <h2 className="text-xl font-bold">Preview</h2>
                     <div className="w-full rounded-lg overflow-hidden border border-border">
                       <img
@@ -549,7 +549,7 @@ export default function YouTubeThumbnail() {
                   </div>
                 </div>
               ) : (
-                <div className="w-full p-6 border border-border rounded-lg bg-card flex items-center justify-center min-h-[400px]">
+                <div className="w-full p-6 border border-card-border rounded-lg bg-card flex items-center justify-center min-h-[400px]">
                   <p className="text-muted-foreground">Select a background to see preview</p>
                 </div>
               )}

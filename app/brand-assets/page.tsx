@@ -23,6 +23,7 @@ const initialSections: SectionedAssets = {
   font: [],
   icon: [],
   'project-logo': [],
+  'menu-logo': [], // Not shown on this page; only used in nav dropdown
 };
 
 const BRANDS = ['find.co', 'Webopedia', 'CCN', 'CryptoManiaks'] as const;
@@ -107,7 +108,7 @@ function ColorCard({ color, hex, isCopied, onCopy, variant }: ColorCardProps) {
 
   return (
     <div
-      className="relative border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 h-full hover:border-muted-foreground/30 transition-colors"
+      className="relative border border-card-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 h-full hover:border-muted-foreground/30 transition-colors"
       onClick={triggerHighlight}
       style={{
         borderColor: isHighlighted ? hex : undefined,
@@ -183,12 +184,15 @@ function BrandAssetsContent() {
           font: [],
           icon: [],
           'project-logo': [],
+          'menu-logo': [],
         };
         const seenIds = new Set<string>();
         (data.assets as BrandAsset[]).forEach(asset => {
           if (seenIds.has(asset.id)) return;
+          if (asset.type === 'menu-logo') return; // Only used in nav dropdown, not on this page
           seenIds.add(asset.id);
-          sections[asset.type].push(asset);
+          const bucket = sections[asset.type as keyof typeof sections];
+          if (bucket) bucket.push(asset);
         });
         setAssetsByType(sections);
       } catch (err) {
@@ -269,7 +273,7 @@ function BrandAssetsContent() {
         </div>
         {loading ? (
           logoView === 'list' ? (
-            <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+            <div className="overflow-x-auto border border-card-border rounded-lg bg-card/60">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr className="text-left">
@@ -313,7 +317,7 @@ function BrandAssetsContent() {
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 w-full sm:w-[260px]"
+                  className="border border-card-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 w-full sm:w-[260px]"
                 >
                   <Skeleton className="h-24 w-full rounded-md" />
                   <div className="space-y-2">
@@ -331,7 +335,7 @@ function BrandAssetsContent() {
         ) : (
           <>
             {logoView === 'list' ? (
-              <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+              <div className="overflow-x-auto border border-card-border rounded-lg bg-card/60">
                 <table className="min-w-full text-sm">
                   <thead className="bg-muted/40">
                     <tr className="text-left">
@@ -408,8 +412,7 @@ function BrandAssetsContent() {
                             {logo.publicUrl && (
                               <Button asChild size="icon" variant="outline">
                                 <a
-                                  href={logo.publicUrl}
-                                  download
+                                  href={`/api/brand-assets/${logo.id}/download`}
                                   aria-label={`Download ${logo.name}`}
                                 >
                                   <Download className="w-4 h-4" />
@@ -436,7 +439,7 @@ function BrandAssetsContent() {
                   return (
                     <div
                       key={`${logo.id}-${index}`}
-                      className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 w-full sm:w-[260px]"
+                      className="border border-card-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 w-full sm:w-[260px]"
                     >
                       <div
                         className="h-32 w-full rounded-md flex items-center justify-center overflow-hidden p-4"
@@ -505,8 +508,7 @@ function BrandAssetsContent() {
                         {logo.publicUrl && (
                           <Button asChild size="icon" variant="outline" className="ml-auto shrink-0">
                             <a
-                              href={logo.publicUrl}
-                              download
+                              href={`/api/brand-assets/${logo.id}/download`}
                               aria-label={`Download ${logo.name}`}
                             >
                               <Download className="w-4 h-4" />
@@ -529,7 +531,7 @@ function BrandAssetsContent() {
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3">
+              <div key={i} className="border border-card-border rounded-lg p-3 bg-card/60 flex flex-col gap-3">
                 <Skeleton className="h-16 w-full rounded-md" />
                 <div className="space-y-1 pr-8">
                   <Skeleton className="h-4 w-24" />
@@ -600,7 +602,7 @@ function BrandAssetsContent() {
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="border border-border rounded-lg p-4 bg-card/60 space-y-2">
+              <div key={i} className="border border-card-border rounded-lg p-4 bg-card/60 space-y-2">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-3 w-full" />
                 <Skeleton className="h-3 w-2/3" />
@@ -620,7 +622,7 @@ function BrandAssetsContent() {
               return (
                 <div
                   key={`${font.id}-${index}`}
-                  className="border border-border rounded-lg pl-4 pr-0 pt-0 pb-0 bg-card/60 flex flex-col sm:flex-row gap-0"
+                  className="border border-card-border rounded-lg pl-4 pr-0 pt-0 pb-0 bg-card/60 flex flex-col sm:flex-row gap-0"
                 >
                   <div className="flex-1 min-w-0 space-y-2 pt-4 pb-4">
                     <p className="font-semibold text-sm text-foreground">{font.name}</p>
@@ -671,7 +673,7 @@ function BrandAssetsContent() {
       <section className="space-y-4">
         <h2 className="text-xl font-semibold text-foreground">Icons &amp; Project Logos</h2>
         {loading ? (
-          <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+          <div className="overflow-x-auto border border-card-border rounded-lg bg-card/60">
             <table className="min-w-full text-sm">
               <thead className="bg-muted/40">
                 <tr className="text-left">
@@ -716,7 +718,7 @@ function BrandAssetsContent() {
         ) : assetsByType.icon.length === 0 && assetsByType['project-logo'].length === 0 ? (
           <p className="text-muted-foreground text-sm">No icons or project logos added yet.</p>
         ) : (
-          <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
+          <div className="overflow-x-auto border border-card-border rounded-lg bg-card/60">
             <table className="min-w-full text-sm">
               <thead className="bg-muted/40">
                 <tr className="text-left">
@@ -774,8 +776,7 @@ function BrandAssetsContent() {
                         {asset.publicUrl && (
                           <Button asChild size="icon" variant="outline">
                             <a
-                              href={asset.publicUrl}
-                              download
+                              href={`/api/brand-assets/${asset.id}/download`}
                               aria-label={`Download ${asset.name}`}
                             >
                               <Download className="w-4 h-4" />

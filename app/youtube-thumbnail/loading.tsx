@@ -14,7 +14,7 @@ export default function Loading() {
         <div className="flex flex-col gap-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="w-full">
-              <div className="border border-border rounded-lg bg-card/60 p-6 space-y-4">
+              <div className="border border-card-border rounded-lg bg-card/60 p-6 space-y-4">
                 <Skeleton className="h-6 w-32" />
                 <Skeleton className="w-full aspect-video rounded-lg" />
                 <Skeleton className="h-9 w-32 mx-auto" />
@@ -41,7 +41,7 @@ export default function Loading() {
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2 border border-border rounded-lg px-3 py-2 bg-card/60"
+                      className="flex items-center gap-2 border border-card-border rounded-lg px-3 py-2 bg-card/60"
                     >
                       <Skeleton className="h-4 w-20" />
                       <Skeleton className="h-10 w-16 rounded-md" />

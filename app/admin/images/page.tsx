@@ -199,7 +199,7 @@ export default function AdminImagesPage() {
         </div>
 
         {/* Upload Form */}
-        <div className="bg-card border border-border rounded-lg p-6 space-y-6">
+        <div className="bg-card border border-card-border rounded-lg p-6 space-y-6">
           <h2 className="text-xl font-semibold">Upload new image</h2>
 
           {/* File Dropzone */}
@@ -278,7 +278,7 @@ export default function AdminImagesPage() {
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">
                 <Tag className="w-4 h-4" />
-                Emotion tags <span className="text-red-500">*</span>
+                Emotion tags <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -313,14 +313,14 @@ export default function AdminImagesPage() {
           </Button>
 
           {uploadProgress && (
-            <p className={`text-sm ${uploadProgress.includes('Error') ? 'text-red-500' : 'text-green-500'}`}>
+            <p className={`text-sm ${uploadProgress.includes('Error') ? 'text-destructive' : 'text-muted-foreground'}`}>
               {uploadProgress}
             </p>
           )}
         </div>
 
         {/* All Uploaded Images */}
-        <div className="bg-card border border-border rounded-lg p-6">
+        <div className="bg-card border border-card-border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">
               Uploaded Images ({filteredImages.length})
@@ -375,7 +375,7 @@ export default function AdminImagesPage() {
                   }}
                   className={`border rounded-lg p-4 space-y-2 transition-all duration-500 ${
                     highlightedImageId === image.id
-                      ? 'border-[#cfe02d] ring-4 ring-[#cfe02d]/30 bg-[#cfe02d]/10'
+                      ? 'border-accent ring-4 ring-accent/30 bg-accent/10'
                       : 'border-border'
                   }`}
                 >
@@ -393,7 +393,7 @@ export default function AdminImagesPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteClick(image)}
-                      className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                      className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                       title={`Delete image: ${image.id}`}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -425,7 +425,7 @@ export default function AdminImagesPage() {
         {/* Delete Confirmation Modal */}
         {imageToDelete && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full space-y-4">
+            <div className="bg-card border border-card-border rounded-lg p-6 max-w-md w-full space-y-4">
               <h3 className="text-lg font-semibold">Delete Image</h3>
               <p className="text-muted-foreground">
                 Are you sure you want to delete <span className="font-medium">{imageToDelete.filename}</span>? 

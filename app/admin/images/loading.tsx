@@ -9,7 +9,7 @@ export default function Loading() {
           <Skeleton className="h-4 w-80" />
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+        <div className="bg-card border border-card-border rounded-lg p-6 space-y-4">
           <Skeleton className="h-6 w-44" />
           <Skeleton className="h-40 w-full rounded-lg" />
           <div className="space-y-2">
@@ -18,7 +18,7 @@ export default function Loading() {
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-lg p-6 space-y-4">
+        <div className="bg-card border border-card-border rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between">
             <Skeleton className="h-6 w-40" />
             <div className="flex gap-2">

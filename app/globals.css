@@ -3,19 +3,99 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Palette: brand colour shades only. Tokens are added here only when a colour
+ * is actually used by a semantic token or component (no unused palette entries).
+ * All UI colours reference this palette.
+ */
+:root {
+  /* Ghost White scale (base #E7ECEE) – used for primary-foreground, card, popover */
+  --palette-ghost-white-50: #FEFEFE;
+  --palette-ghost-white-500: #E7ECEE;
+  /* Page background (light mode) */
+  --palette-page-bg-light: #F6F8F9;
+  /* Card border (light mode) */
+  --palette-card-border-light: #E6F1F2;
+  /* Soft Black scale (base #1F2024) – used for foreground, primary, dark backgrounds */
+  --palette-soft-black-950: #0a0b0d;
+  --palette-soft-black-975: #050607;
+  --palette-soft-black-990: #030304;
+  --palette-soft-black-900: #0f1012;
+  --palette-soft-black-700: #1a1b1f;
+  --palette-soft-black-800: #151619;
+  --palette-soft-black-600: #1F2024;
+  --palette-soft-black-500: #25262b;
+  --palette-soft-black-400: #2c2d32;
+  /* Slate Blue (base #42525E) – default buttons, chart-2 */
+  --palette-slate-blue-400: #5a6b78;
+  --palette-slate-blue-500: #42525E;
+  --palette-slate-blue-600: #35404a;
+  /* Find.co Gold (base #CFE02D) – accent, CTA, chart-4 */
+  --palette-find-gold-500: #CFE02D;
+  --palette-find-gold-600: #AAB825;
+  --palette-find-gold-400: #E3ED85;
+  /* Sky Blue (base #2BACC1) – ring, chart-1 */
+  --palette-sky-blue-500: #2BACC1;
+  --palette-sky-blue-600: #238a9c;
+  /* Storm Blue (base #BEDBDC) – secondary, muted, chart-3 */
+  --palette-storm-blue-500: #BEDBDC;
+  --palette-storm-blue-600: #9CB4B4;
+  /* Destructive (base #DC2626) – errors, destructive actions */
+  --palette-destructive-500: #DC2626;
+  --palette-destructive-600: #B41F1F;
+  /* Image creation (YouTube thumbnail: text outline, fill, emphasis) */
+  --palette-black: #000000;
+  --palette-white: #FFFFFF;
+  --palette-gold: #FFD700;
+  /* Button outline/ghost hover and alt text (light grey, dark blue-grey) */
+  --palette-button-hover-light: #D5D9DC;
+  --palette-button-hover-dark: #2B353D;
+
+  /* Typography tokens: use with font: var(--text-*) or individual var(--text-*-size) etc. */
+  --text-heading-1: bold 1.875rem/1.2 var(--font-space-grotesk), ui-sans-serif, sans-serif;
+  --text-heading-2: 600 1.25rem/1.3 var(--font-space-grotesk), ui-sans-serif, sans-serif;
+  --text-heading-3: 500 1.125rem/1.3 var(--font-space-grotesk), ui-sans-serif, sans-serif;
+  --text-body: 400 1rem/1.5 var(--font-space-grotesk), ui-sans-serif, sans-serif;
+  --text-small: 400 0.875rem/1.4 var(--font-space-grotesk), ui-sans-serif, sans-serif;
+  /* Split form for reliable application (e.g. in React inline styles) */
+  --text-heading-1-size: 1.875rem;
+  --text-heading-1-weight: 700;
+  --text-heading-1-height: 1.2;
+  --text-heading-2-size: 1.25rem;
+  --text-heading-2-weight: 600;
+  --text-heading-2-height: 1.3;
+  --text-heading-3-size: 1.125rem;
+  --text-heading-3-weight: 500;
+  --text-heading-3-height: 1.3;
+  --text-body-size: 1rem;
+  --text-body-weight: 400;
+  --text-body-height: 1.5;
+  --text-small-size: 0.875rem;
+  --text-small-weight: 400;
+  --text-small-height: 1.4;
+  --font-family-sans: var(--font-space-grotesk), ui-sans-serif, sans-serif;
+}
+
 @theme inline {
-  /* Soft black shade scale (Tailwind-style) – base #1F2024 */
-  --color-soft-black-990: #030304;
-  --color-soft-black-975: #050607;
-  --color-soft-black-950: #0a0b0d;
-  --color-soft-black-900: #0f1012;
-  --color-soft-black-800: #151619;
-  --color-soft-black-700: #1a1b1f;
-  --color-soft-black-600: #1F2024;
-  --color-soft-black-500: #25262b;
-  --color-soft-black-400: #2c2d32;
-  /* Slate Blue – highlight for select/dropdown items */
-  --color-slate-blue: #42525E;
+  /* Tailwind colour names: point to palette so utilities (bg-*, text-*) work */
+  --color-soft-black-990: var(--palette-soft-black-990);
+  --color-soft-black-975: var(--palette-soft-black-975);
+  --color-soft-black-950: var(--palette-soft-black-950);
+  --color-soft-black-900: var(--palette-soft-black-900);
+  --color-soft-black-800: var(--palette-soft-black-800);
+  --color-soft-black-700: var(--palette-soft-black-700);
+  --color-soft-black-600: var(--palette-soft-black-600);
+  --color-soft-black-500: var(--palette-soft-black-500);
+  --color-soft-black-400: var(--palette-soft-black-400);
+  --color-slate-blue-400: var(--palette-slate-blue-400);
+  --color-slate-blue: var(--palette-slate-blue-500);
+  --color-slate-blue-600: var(--palette-slate-blue-600);
+  --color-find-gold-600: var(--palette-find-gold-600);
+  --color-find-gold-400: var(--palette-find-gold-400);
+  --color-storm-blue-600: var(--palette-storm-blue-600);
+  --color-black: var(--palette-black);
+  --color-white: var(--palette-white);
+  --color-gold: var(--palette-gold);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-space-grotesk);
@@ -37,6 +117,9 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-600: var(--palette-destructive-600);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-inverse-foreground: var(--inverse-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -44,10 +127,15 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
   --color-primary: var(--primary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-accent-hover: var(--accent-hover);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
+  --color-card-border: var(--card-border);
   --color-card: var(--card);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -55,79 +143,181 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Find.co brand palette – use as reference only; semantic tokens below drive UI */
-/* Find.co Gold #CFE02D (no shades) | Soft Black #1F2024 | Slate Blue #42525E */
-/* Sky Blue #2BACC1 | Storm Blue #BEDBDC | Ghost White #E7ECEE */
-
 :root {
   --radius: 0.625rem;
-  /* Light mode – one typography colour for all text */
-  --background: #E7ECEE;
-  --foreground: #1F2024;
-  --card: #ffffff;
+  /* Light mode – all from palette */
+  --background: var(--palette-page-bg-light);
+  --foreground: var(--palette-soft-black-600);
+  --card: var(--palette-ghost-white-50);
+  --card-border: var(--palette-card-border-light);
   --card-foreground: var(--foreground);
-  --popover: #ffffff;
+  --popover: var(--palette-ghost-white-50);
   --popover-foreground: var(--foreground);
-  --primary: #1F2024;
-  --primary-foreground: #E7ECEE;
-  --secondary: #BEDBDC;
+  --primary: var(--palette-slate-blue-500);
+  --primary-hover: var(--palette-slate-blue-600);
+  --primary-foreground: var(--palette-ghost-white-500);
+  --secondary: var(--palette-storm-blue-500);
+  --secondary-hover: var(--palette-storm-blue-600);
   --secondary-foreground: var(--foreground);
-  --muted: #BEDBDC;
+  --muted: var(--palette-storm-blue-500);
   --muted-foreground: var(--foreground);
-  --accent: #CFE02D;
-  --accent-foreground: var(--foreground);
-  --destructive: oklch(0.577 0.245 27.325);
+  --accent: var(--palette-find-gold-500);
+  --accent-hover: var(--palette-find-gold-400);
+  --accent-foreground: var(--palette-soft-black-950);
+  --destructive: var(--palette-destructive-500);
+  --destructive-hover: var(--palette-destructive-600);
+  --destructive-foreground: var(--palette-ghost-white-500);
+  --inverse-foreground: var(--palette-ghost-white-500);
   --border: rgba(66, 82, 94, 0.35);
   --input: rgba(66, 82, 94, 0.5);
-  --ring: #2BACC1;
-  --chart-1: #2BACC1;
-  --chart-2: #42525E;
-  --chart-3: #BEDBDC;
-  --chart-4: #CFE02D;
-  --chart-5: #238a9c;
-  --sidebar: #ffffff;
+  --ring: var(--palette-sky-blue-500);
+  --chart-1: var(--palette-sky-blue-500);
+  --chart-2: var(--palette-slate-blue-500);
+  --chart-3: var(--palette-storm-blue-500);
+  --chart-4: var(--palette-find-gold-500);
+  --chart-5: var(--palette-sky-blue-600);
+  --sidebar: var(--palette-ghost-white-50);
   --sidebar-foreground: var(--foreground);
-  --sidebar-primary: #1F2024;
-  --sidebar-primary-foreground: #E7ECEE;
-  --sidebar-accent: #BEDBDC;
+  --sidebar-primary: var(--palette-slate-blue-500);
+  --sidebar-primary-foreground: var(--palette-ghost-white-500);
+  --sidebar-accent: var(--palette-storm-blue-500);
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: rgba(66, 82, 94, 0.35);
-  --sidebar-ring: #2BACC1;
+  --sidebar-ring: var(--palette-sky-blue-500);
+  /* Outline, ghost, link button text: slate blue in light */
+  --button-alt-foreground: var(--palette-slate-blue-500);
+  /* Outline + ghost hover fill */
+  --button-outline-ghost-hover-bg: var(--palette-button-hover-light);
 }
 
 .dark {
-  /* Dark mode – one typography colour for all text */
-  --background: var(--color-soft-black-990);
-  --foreground: #E7ECEE;
-  --card: var(--color-soft-black-975);
+  --background: var(--palette-soft-black-990);
+  --foreground: var(--palette-ghost-white-500);
+  --card: var(--palette-soft-black-975);
+  --card-border: var(--border);
   --card-foreground: var(--foreground);
-  --popover: var(--color-soft-black-975);
+  --popover: var(--palette-soft-black-975);
   --popover-foreground: var(--foreground);
-  --primary: #CFE02D;
-  --primary-foreground: #0a0b0d;
-  --secondary: var(--color-soft-black-700);
+  --primary: var(--palette-slate-blue-500);
+  --primary-hover: var(--palette-slate-blue-400);
+  --primary-foreground: var(--palette-ghost-white-500);
+  --secondary: var(--palette-soft-black-700);
+  --secondary-hover: var(--palette-soft-black-800);
   --secondary-foreground: var(--foreground);
-  --muted: var(--color-soft-black-800);
+  --muted: var(--palette-soft-black-800);
   --muted-foreground: var(--foreground);
-  --accent: #CFE02D;
-  --accent-foreground: #0a0b0d;
-  --destructive: oklch(0.704 0.191 22.216);
+  --accent: var(--palette-find-gold-500);
+  --accent-hover: var(--palette-find-gold-400);
+  --accent-foreground: var(--palette-soft-black-950);
+  --destructive: var(--palette-destructive-600);
+  --destructive-hover: var(--palette-destructive-600);
+  --destructive-foreground: var(--palette-ghost-white-500);
+  --inverse-foreground: var(--palette-ghost-white-500);
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #2BACC1;
-  --chart-1: #2BACC1;
-  --chart-2: #42525E;
-  --chart-3: #BEDBDC;
-  --chart-4: #CFE02D;
-  --chart-5: #238a9c;
-  --sidebar: var(--color-soft-black-990);
+  --ring: var(--palette-sky-blue-500);
+  --chart-1: var(--palette-sky-blue-500);
+  --chart-2: var(--palette-slate-blue-500);
+  --chart-3: var(--palette-storm-blue-500);
+  --chart-4: var(--palette-find-gold-500);
+  --chart-5: var(--palette-sky-blue-600);
+  --sidebar: var(--palette-soft-black-990);
   --sidebar-foreground: var(--foreground);
-  --sidebar-primary: #CFE02D;
-  --sidebar-primary-foreground: #0a0b0d;
-  --sidebar-accent: var(--color-soft-black-800);
+  --sidebar-primary: var(--palette-slate-blue-500);
+  --sidebar-primary-foreground: var(--palette-ghost-white-500);
+  --sidebar-accent: var(--palette-soft-black-800);
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #2BACC1;
+  --sidebar-ring: var(--palette-sky-blue-500);
+  /* Outline, ghost, link button text: light grey in dark */
+  --button-alt-foreground: var(--palette-button-hover-light);
+  /* Outline + ghost hover fill */
+  --button-outline-ghost-hover-bg: var(--palette-button-hover-dark);
+}
+
+/* Theme preview blocks (style guide) – same palette refs */
+.theme-preview-light {
+  --background: var(--palette-page-bg-light);
+  --foreground: var(--palette-soft-black-600);
+  --card: var(--palette-ghost-white-50);
+  --card-border: var(--palette-card-border-light);
+  --card-foreground: var(--foreground);
+  --popover: var(--palette-ghost-white-50);
+  --popover-foreground: var(--foreground);
+  --primary: var(--palette-slate-blue-500);
+  --primary-hover: var(--palette-slate-blue-600);
+  --primary-foreground: var(--palette-ghost-white-500);
+  --secondary: var(--palette-storm-blue-500);
+  --secondary-hover: var(--palette-storm-blue-600);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--palette-storm-blue-500);
+  --muted-foreground: var(--foreground);
+  --accent: var(--palette-find-gold-500);
+  --accent-hover: var(--palette-find-gold-400);
+  --accent-foreground: var(--palette-soft-black-950);
+  --destructive: var(--palette-destructive-500);
+  --destructive-hover: var(--palette-destructive-600);
+  --destructive-foreground: var(--palette-ghost-white-500);
+  --inverse-foreground: var(--palette-ghost-white-500);
+  --border: rgba(66, 82, 94, 0.35);
+  --input: rgba(66, 82, 94, 0.5);
+  --ring: var(--palette-sky-blue-500);
+  --button-alt-foreground: var(--palette-slate-blue-500);
+  --button-outline-ghost-hover-bg: var(--palette-button-hover-light);
+}
+.theme-preview-dark {
+  --background: var(--palette-soft-black-990);
+  --foreground: var(--palette-ghost-white-500);
+  --card: var(--palette-soft-black-975);
+  --card-border: var(--border);
+  --card-foreground: var(--foreground);
+  --popover: var(--palette-soft-black-975);
+  --popover-foreground: var(--foreground);
+  --primary: var(--palette-slate-blue-500);
+  --primary-hover: var(--palette-slate-blue-400);
+  --primary-foreground: var(--palette-ghost-white-500);
+  --secondary: var(--palette-soft-black-700);
+  --secondary-hover: var(--palette-soft-black-800);
+  --secondary-foreground: var(--foreground);
+  --muted: var(--palette-soft-black-800);
+  --muted-foreground: var(--foreground);
+  --accent: var(--palette-find-gold-500);
+  --accent-hover: var(--palette-find-gold-400);
+  --accent-foreground: var(--palette-soft-black-950);
+  --destructive: var(--palette-destructive-600);
+  --destructive-hover: var(--palette-destructive-600);
+  --destructive-foreground: var(--palette-ghost-white-500);
+  --inverse-foreground: var(--palette-ghost-white-500);
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
+  --ring: var(--palette-sky-blue-500);
+  --button-alt-foreground: var(--palette-button-hover-light);
+  --button-outline-ghost-hover-bg: var(--palette-button-hover-dark);
+}
+/* Override: button styles in style guide theme previews so outline/ghost show correct hover */
+.theme-preview-light [data-slot="button"].bg-destructive {
+  background: var(--destructive);
+}
+.theme-preview-light [data-slot="button"].border.bg-transparent {
+  background: transparent;
+  border-color: var(--primary);
+  color: var(--button-alt-foreground);
+}
+.theme-preview-light [data-slot="button"].border.bg-transparent:hover {
+  background: var(--button-outline-ghost-hover-bg);
+  border-color: var(--primary-hover);
+}
+/* Outline + ghost hover in light preview */
+.theme-preview-light [data-slot="button"]:not(.bg-primary):not(.bg-accent):not(.bg-destructive):not([class*="underline"]):hover {
+  background: var(--button-outline-ghost-hover-bg);
+}
+.theme-preview-dark [data-slot="button"].border.bg-transparent:hover {
+  background: var(--button-outline-ghost-hover-bg);
+  border-color: var(--primary-hover);
+}
+/* Outline + ghost hover in dark preview */
+.theme-preview-dark [data-slot="button"]:not(.bg-primary):not(.bg-accent):not(.bg-destructive):not([class*="underline"]):hover {
+  background: var(--button-outline-ghost-hover-bg);
 }
 
 @layer base {
@@ -137,4 +327,13 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Typography token utilities – use font: var(--text-*) */
+@layer utilities {
+  .text-heading-1 { font: var(--text-heading-1); }
+  .text-heading-2 { font: var(--text-heading-2); }
+  .text-heading-3 { font: var(--text-heading-3); }
+  .text-body-token { font: var(--text-body); }
+  .text-small-token { font: var(--text-small); }
 }

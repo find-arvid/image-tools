@@ -6,7 +6,7 @@
 import { Redis } from '@upstash/redis';
 
 // Brand asset types
-export type BrandAssetType = 'logo' | 'color' | 'font' | 'icon' | 'project-logo';
+export type BrandAssetType = 'logo' | 'color' | 'font' | 'icon' | 'project-logo' | 'menu-logo';
 
 export interface BrandAsset {
   id: string;

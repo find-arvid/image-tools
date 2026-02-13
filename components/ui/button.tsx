@@ -9,16 +9,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover",
+        cta: "bg-accent text-accent-foreground hover:bg-accent-hover",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "bg-destructive text-destructive-foreground hover:bg-destructive-hover focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive-hover",
         outline:
-          "border bg-background shadow-xs hover:border-accent dark:bg-input/30 dark:border-input dark:hover:border-accent",
-        secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border border-primary bg-transparent shadow-xs hover:border-primary-hover hover:bg-[var(--button-outline-ghost-hover-bg)] dark:border-primary dark:hover:border-primary-hover dark:hover:bg-[var(--button-outline-ghost-hover-bg)] text-[var(--button-alt-foreground)]",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        link: "text-primary underline-offset-4 hover:underline",
+          "text-[var(--button-alt-foreground)] hover:bg-[var(--button-outline-ghost-hover-bg)] dark:hover:bg-[var(--button-outline-ghost-hover-bg)]",
+        link: "text-ring underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

@@ -10,7 +10,7 @@ export default function Loading() {
         </div>
 
         <div className="space-y-6">
-          <div className="border border-border rounded-lg p-6 bg-card/60 space-y-3">
+          <div className="border border-card-border rounded-lg p-6 bg-card/60 space-y-3">
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-10 w-24" />
             <Skeleton className="h-3 w-40" />
@@ -20,7 +20,7 @@ export default function Loading() {
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="border border-border rounded-lg p-6 bg-card/60 space-y-3"
+                className="border border-card-border rounded-lg p-6 bg-card/60 space-y-3"
               >
                 <Skeleton className="h-5 w-40" />
                 <Skeleton className="h-10 w-24" />

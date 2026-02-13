@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Upload, Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Settings, ImagePlus, Palette, BookOpen, BarChart3 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import {
@@ -55,15 +55,22 @@ export default function Footer() {
             {mounted && (
               <Button
                 variant="outline"
-                size="icon"
+                size="default"
+                className="flex items-center gap-2"
                 onClick={toggleTheme}
                 aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
                 title={isDark ? 'Light mode' : 'Dark mode'}
               >
                 {isDark ? (
-                  <Sun className="w-4 h-4" />
+                  <>
+                    <Sun className="w-4 h-4" />
+                    Light
+                  </>
                 ) : (
-                  <Moon className="w-4 h-4" />
+                  <>
+                    <Moon className="w-4 h-4" />
+                    Dark
+                  </>
                 )}
               </Button>
             )}
@@ -71,26 +78,43 @@ export default function Footer() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex items-center gap-2">
-                    <Upload className="w-4 h-4" />
+                    <Settings className="w-4 h-4" />
                     Admin tools
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="start">
                   <DropdownMenuLabel>Admin tools</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <Link href="/admin/images">
                     <DropdownMenuItem asChild>
-                      <span>Upload images</span>
+                      <span className="flex items-center gap-2">
+                        <ImagePlus className="w-4 h-4" />
+                        Upload images
+                      </span>
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/admin/brand-assets">
                     <DropdownMenuItem asChild>
-                      <span>Brand assets admin</span>
+                      <span className="flex items-center gap-2">
+                        <Palette className="w-4 h-4" />
+                        Brand assets admin
+                      </span>
+                    </DropdownMenuItem>
+                  </Link>
+                  <Link href="/admin/style-guide">
+                    <DropdownMenuItem asChild>
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        Style guide
+                      </span>
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/statistics">
                     <DropdownMenuItem asChild>
-                      <span>Statistics</span>
+                      <span className="flex items-center gap-2">
+                        <BarChart3 className="w-4 h-4" />
+                        Statistics
+                      </span>
                     </DropdownMenuItem>
                   </Link>
                 </DropdownMenuContent>
@@ -98,15 +122,12 @@ export default function Footer() {
             ) : (
               <Link href="/admin/images">
                 <Button variant="outline" className="flex items-center gap-2">
-                  <Upload className="w-4 h-4" />
+                  <Settings className="w-4 h-4" />
                   Admin tools
                 </Button>
               </Link>
             )}
 
-            <Link href="/submit-feedback">
-              <Button variant="outline">Submit feedback</Button>
-            </Link>
           </div>
         </div>
       </div>
