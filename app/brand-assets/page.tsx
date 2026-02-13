@@ -157,7 +157,6 @@ function BrandAssetsContent() {
   const [dimensions, setDimensions] = useState<Record<string, { width: number; height: number }>>({});
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
   const [logoView, setLogoView] = useState<'list' | 'cards'>('cards');
-  const [logoSort, setLogoSort] = useState<'name' | 'format'>('name');
 
   const copyHex = (hex: string) => {
     if (!hex) return;
@@ -224,17 +223,9 @@ function BrandAssetsContent() {
   const displayBrand =
     BRAND_LABELS[brand.toLowerCase() as keyof typeof BRAND_LABELS] ?? 'Find.co';
 
-  const sortedLogos = [...assetsByType.logo].sort((a, b) => {
-    if (logoSort === 'name') {
-      return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
-    }
-    const fa = (a.format || '').toLowerCase();
-    const fb = (b.format || '').toLowerCase();
-    if (fa && fb) return fa.localeCompare(fb);
-    if (fa && !fb) return -1;
-    if (!fa && fb) return 1;
-    return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
-  });
+  const sortedLogos = [...assetsByType.logo].sort(
+    (a, b) => (a.order ?? 999999) - (b.order ?? 999999)
+  );
 
   return (
     <main className="min-h-screen w-full max-w-6xl mx-auto px-4 py-10 space-y-12">
@@ -259,21 +250,6 @@ function BrandAssetsContent() {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold text-foreground">Logos</h2>
           <div className="flex flex-wrap items-center gap-5">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="whitespace-nowrap">Sort by</span>
-              <Select
-                value={logoSort}
-                onValueChange={(value) => setLogoSort(value as 'name' | 'format')}
-              >
-                <SelectTrigger className="h-8 w-[7rem]" size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">Name</SelectItem>
-                  <SelectItem value="format">Format</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="whitespace-nowrap">View</span>
               <Select

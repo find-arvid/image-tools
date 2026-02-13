@@ -142,6 +142,11 @@ export default function AdminBrandAssetsPage() {
   const [draggedFontId, setDraggedFontId] = useState<string | null>(null);
   const [dragOverFontId, setDragOverFontId] = useState<string | null>(null);
   const [savingFontOrder, setSavingFontOrder] = useState(false);
+  // Logo order (drag to reorder)
+  const [orderedLogos, setOrderedLogos] = useState<BrandAsset[]>([]);
+  const [draggedLogoId, setDraggedLogoId] = useState<string | null>(null);
+  const [dragOverLogoId, setDragOverLogoId] = useState<string | null>(null);
+  const [savingLogoOrder, setSavingLogoOrder] = useState(false);
   // Logo editing
   const [logoToEdit, setLogoToEdit] = useState<BrandAsset | null>(null);
   const [logoEditName, setLogoEditName] = useState('');
@@ -235,6 +240,14 @@ export default function AdminBrandAssetsPage() {
       .filter((a): a is BrandAsset => a.type === 'font')
       .sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
     setOrderedFonts(fnts);
+  }, [assets]);
+
+  // Sync ordered logos when assets load
+  useEffect(() => {
+    const logos = assets
+      .filter((a): a is BrandAsset => a.type === 'logo')
+      .sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+    setOrderedLogos(logos);
   }, [assets]);
 
   // Populate colour form when editing
@@ -532,6 +545,68 @@ export default function AdminBrandAssetsPage() {
       setError(err instanceof Error ? err.message : 'Failed to save font order');
     } finally {
       setSavingFontOrder(false);
+    }
+  };
+
+  const handleLogoDragStart = (e: React.DragEvent, id: string) => {
+    if ((e.target as HTMLElement).closest('button')) return;
+    setDraggedLogoId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
+  };
+
+  const handleLogoDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverLogoId(id);
+  };
+
+  const handleLogoDragLeave = () => {
+    setDragOverLogoId(null);
+  };
+
+  const handleLogoDrop = (e: React.DragEvent, dropId: string) => {
+    e.preventDefault();
+    setDragOverLogoId(null);
+    if (!draggedLogoId || draggedLogoId === dropId) return;
+    const from = orderedLogos.findIndex((l) => l.id === draggedLogoId);
+    const to = orderedLogos.findIndex((l) => l.id === dropId);
+    if (from === -1 || to === -1) return;
+    const item = orderedLogos[from];
+    const newArr = orderedLogos.filter((_, i) => i !== from);
+    const insertAt = from < to ? to - 1 : to;
+    newArr.splice(insertAt, 0, item);
+    setOrderedLogos(newArr);
+  };
+
+  const handleLogoDragEnd = async () => {
+    if (!draggedLogoId) return;
+    setDraggedLogoId(null);
+    const prevOrdered = assets
+      .filter((a): a is BrandAsset => a.type === 'logo')
+      .sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+    const orderChanged =
+      orderedLogos.length !== prevOrdered.length ||
+      orderedLogos.some((l, i) => l.id !== prevOrdered[i]?.id);
+    if (!orderChanged) return;
+    setSavingLogoOrder(true);
+    setError(null);
+    try {
+      await Promise.all(
+        orderedLogos.map((l, index) =>
+          fetch(`/api/brand-assets/${l.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ order: index }),
+          })
+        )
+      );
+      await loadAssets();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to save logo order');
+    } finally {
+      setSavingLogoOrder(false);
     }
   };
 
@@ -879,13 +954,14 @@ export default function AdminBrandAssetsPage() {
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-sm font-medium text-foreground/80">Existing logos</h3>
               <p className="text-xs text-muted-foreground">
-                Click edit to change logo name, description or tags.
+                Drag to reorder. Click edit to change name, description or tags.
               </p>
             </div>
             <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
               <table className="min-w-full text-sm">
                 <thead className="bg-muted/40">
                   <tr className="text-left">
+                    <th className="w-8 px-1 py-2 font-medium text-xs text-muted-foreground" aria-label="Drag to reorder" />
                     <th className="px-3 py-2 font-medium text-xs text-muted-foreground">
                       Preview
                     </th>
@@ -898,8 +974,20 @@ export default function AdminBrandAssetsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {logos.map((logo) => (
-                    <tr key={logo.id} className="border-t border-border/60">
+                  {orderedLogos.map((logo) => (
+                    <tr
+                      key={logo.id}
+                      draggable
+                      onDragStart={(e) => handleLogoDragStart(e, logo.id)}
+                      onDragOver={(e) => handleLogoDragOver(e, logo.id)}
+                      onDragLeave={handleLogoDragLeave}
+                      onDrop={(e) => handleLogoDrop(e, logo.id)}
+                      onDragEnd={handleLogoDragEnd}
+                      className={`border-t border-border/60 cursor-grab active:cursor-grabbing transition-shadow ${draggedLogoId === logo.id ? 'opacity-50' : ''} ${dragOverLogoId === logo.id ? 'ring-inset ring-2 ring-primary/50' : ''}`}
+                    >
+                      <td className="px-1 py-2 align-middle">
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                      </td>
                       <td className="px-3 py-2 align-middle">
                         {logo.publicUrl && (
                           <div className="h-10 w-20 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
@@ -950,6 +1038,12 @@ export default function AdminBrandAssetsPage() {
                 </tbody>
               </table>
             </div>
+            {savingLogoOrder && (
+              <p className="text-xs text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Saving logo order…
+              </p>
+            )}
 
             {logoToEdit && (
               <div className="mt-4 border border-border rounded-lg bg-card/70 p-4 space-y-3">
