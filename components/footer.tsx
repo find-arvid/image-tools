@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Upload } from 'lucide-react';
+import { Upload, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,7 +17,17 @@ import {
 
 export default function Footer() {
   const [mounted, setMounted] = useState(false);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const isDark = (resolvedTheme ?? theme) === 'dark';
   useEffect(() => setMounted(true), []);
+
+  const toggleTheme = () => {
+    const next = isDark ? 'light' : 'dark';
+    setTheme(next);
+    // Ensure class is applied immediately (workaround for next-themes timing)
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(next);
+  };
 
   return (
     <footer className="border-t border-border bg-background">
@@ -39,8 +50,23 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Right side - Links */}
+          {/* Right side - Theme switch and links */}
           <div className="flex flex-row flex-wrap gap-3 items-center">
+            {mounted && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={toggleTheme}
+                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={isDark ? 'Light mode' : 'Dark mode'}
+              >
+                {isDark ? (
+                  <Sun className="w-4 h-4" />
+                ) : (
+                  <Moon className="w-4 h-4" />
+                )}
+              </Button>
+            )}
             {mounted ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

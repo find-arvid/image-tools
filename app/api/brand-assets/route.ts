@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
       downloadR2Key: body.downloadR2Key,
       downloadUrl: body.downloadUrl,
       weights: body.weights || [],
+      previewImageUrl: body.previewImageUrl,
       tags: body.tags || [],
       createdAt: body.createdAt ?? now,
       updatedAt: now,

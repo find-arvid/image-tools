@@ -34,6 +34,12 @@ const BRAND_LABELS: Record<string, string> = {
   cryptomaniaks: 'CryptoManiaks',
 };
 
+/** Preview images for font cards (font name -> path in /public) */
+const FONT_PREVIEW_IMAGES: Record<string, string> = {
+  'Space Grotesk': '/space grotesk.png',
+  'Acid Grotesk': '/acid grotesk.png',
+};
+
 function hexToRgba(hex: string, alpha: number): string {
   let value = hex.trim().replace('#', '');
   if (value.length === 3) {
@@ -131,7 +137,7 @@ function ColorCard({ color, hex, isCopied, onCopy, variant }: ColorCardProps) {
         </button>
       </div>
       <div className="flex-1 flex flex-col gap-2">
-        <p className="font-semibold text-base text-white">{color.name}</p>
+        <p className="font-semibold text-base text-foreground">{color.name}</p>
         {color.usage && (
           <p className="text-sm text-muted-foreground">{color.usage}</p>
         )}
@@ -234,7 +240,7 @@ function BrandAssetsContent() {
     <main className="min-h-screen w-full max-w-6xl mx-auto px-4 py-10 space-y-12">
       <header className="space-y-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold text-white">
+          <h1 className="text-3xl font-bold text-foreground">
             {displayBrand} Brand Assets
           </h1>
           <p className="text-muted-foreground max-w-2xl">
@@ -251,7 +257,7 @@ function BrandAssetsContent() {
       {/* Logos */}
       <section className="space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="text-xl font-semibold text-white">Logos</h2>
+          <h2 className="text-xl font-semibold text-foreground">Logos</h2>
           <div className="flex flex-wrap items-center gap-5">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className="whitespace-nowrap">Sort by</span>
@@ -327,11 +333,11 @@ function BrandAssetsContent() {
               </table>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="flex flex-wrap gap-4">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3"
+                  className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 w-full sm:w-[260px]"
                 >
                   <Skeleton className="h-24 w-full rounded-md" />
                   <div className="space-y-2">
@@ -387,7 +393,7 @@ function BrandAssetsContent() {
                           </td>
                           <td className="px-3 py-2 align-middle">
                             <div className="flex flex-col">
-                              <span className="text-sm text-white">{logo.name}</span>
+                              <span className="text-sm text-foreground">{logo.name}</span>
                               {logo.description && (
                                 <span className="text-xs text-muted-foreground line-clamp-1">
                                   {logo.description}
@@ -442,7 +448,7 @@ function BrandAssetsContent() {
                 </table>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="flex flex-wrap gap-4">
                 {sortedLogos.map((logo, index) => {
                   const dim = dimensions[logo.id];
                   const res =
@@ -454,9 +460,26 @@ function BrandAssetsContent() {
                   return (
                     <div
                       key={`${logo.id}-${index}`}
-                      className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3"
+                      className="border border-border rounded-lg p-3 bg-card/60 flex flex-col gap-3 w-full sm:w-[260px]"
                     >
-                      <div className="h-32 w-full bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
+                      <div
+                        className="h-32 w-full rounded-md flex items-center justify-center overflow-hidden p-4"
+                        style={{
+                          backgroundColor: 'var(--card)',
+                          backgroundImage: `
+                            linear-gradient(45deg, var(--muted) 25%, transparent 25%),
+                            linear-gradient(-45deg, var(--muted) 25%, transparent 25%),
+                            linear-gradient(45deg, transparent 75%, var(--muted) 75%),
+                            linear-gradient(-45deg, transparent 75%, var(--muted) 75%),
+                            linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%),
+                            linear-gradient(-45deg, rgba(255,255,255,0.2) 25%, transparent 25%),
+                            linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.2) 75%),
+                            linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.2) 75%)
+                          `,
+                          backgroundSize: '24px 24px',
+                          backgroundPosition: '0 0, 0 12px, 12px -12px, -12px 0px, 0 0, 0 12px, 12px -12px, -12px 0px',
+                        }}
+                      >
                         {logo.publicUrl && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -468,12 +491,22 @@ function BrandAssetsContent() {
                         )}
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-white">{logo.name}</p>
+                        <p className="text-sm font-medium text-foreground">{logo.name}</p>
                         {logo.description && (
                           <p className="text-xs text-muted-foreground">
                             {logo.description}
                           </p>
                         )}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                          <span>
+                            <span className="font-semibold">Size: </span>
+                            {formatBytes(logo.fileSizeBytes)}
+                          </span>
+                          <span>
+                            <span className="font-semibold">Res: </span>
+                            {res}
+                          </span>
+                        </div>
                         {logo.tags && logo.tags.length > 0 && (
                           <div className="mt-1 flex flex-wrap gap-1">
                             {logo.tags.map((tag) => (
@@ -487,23 +520,14 @@ function BrandAssetsContent() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-auto flex items-center justify-between text-[11px] text-muted-foreground">
-                        <div className="space-y-0.5">
-                          <div>
-                            <span className="font-semibold">Format: </span>
-                            {logo.format ? logo.format.toUpperCase() : '—'}
-                          </div>
-                          <div>
-                            <span className="font-semibold">Size: </span>
-                            {formatBytes(logo.fileSizeBytes)}
-                          </div>
-                          <div>
-                            <span className="font-semibold">Resolution: </span>
-                            {res}
-                          </div>
-                        </div>
+                      <div className="mt-auto flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                        {logo.format && (
+                          <span className="inline-flex items-center rounded-md border border-border bg-muted/60 px-2.5 py-1 text-sm font-semibold uppercase tracking-wide text-foreground">
+                            {logo.format}
+                          </span>
+                        )}
                         {logo.publicUrl && (
-                          <Button asChild size="icon" variant="outline">
+                          <Button asChild size="icon" variant="outline" className="ml-auto shrink-0">
                             <a
                               href={logo.publicUrl}
                               download
@@ -525,7 +549,7 @@ function BrandAssetsContent() {
 
       {/* Colours */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-white">Colours</h2>
+        <h2 className="text-xl font-semibold text-foreground">Colours</h2>
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -577,13 +601,13 @@ function BrandAssetsContent() {
                 <>
                   {primary.length > 0 && (
                     <div className="space-y-3">
-                      <p className="text-sm font-medium text-white/80">Primary</p>
+                      <p className="text-sm font-medium text-foreground/80">Primary</p>
                       {renderGrid(primary, 'primary')}
                     </div>
                   )}
                   {secondary.length > 0 && (
                     <div className="space-y-3">
-                      <p className="text-sm font-medium text-white/80">Secondary</p>
+                      <p className="text-sm font-medium text-foreground/80">Secondary</p>
                       {renderGrid(secondary, 'secondary')}
                     </div>
                   )}
@@ -596,7 +620,7 @@ function BrandAssetsContent() {
 
       {/* Fonts */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-white">Fonts</h2>
+        <h2 className="text-xl font-semibold text-foreground">Fonts</h2>
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3, 4].map((i) => (
@@ -615,42 +639,61 @@ function BrandAssetsContent() {
           <p className="text-muted-foreground text-sm">No fonts added yet.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {assetsByType.font.map((font, index) => (
-              <div key={`${font.id}-${index}`} className="border border-border rounded-lg p-4 bg-card/60 space-y-2">
-                <p className="font-semibold text-sm text-white">{font.name}</p>
-                {font.usage && (
-                  <p className="text-xs text-muted-foreground">{font.usage}</p>
-                )}
-                {font.weights && font.weights.length > 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Weights: {font.weights.join(', ')}
-                  </p>
-                )}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {font.googleFontUrl && (
-                    <Button asChild size="sm" variant="outline">
-                      <a href={font.googleFontUrl} target="_blank" rel="noreferrer">
-                        View font page
-                      </a>
-                    </Button>
-                  )}
-                  {font.downloadUrl && (
-                    <Button asChild size="sm">
-                      <a href={font.downloadUrl} download>
-                        Download font files
-                      </a>
-                    </Button>
+            {assetsByType.font.map((font, index) => {
+              const previewSrc = font.previewImageUrl || FONT_PREVIEW_IMAGES[font.name];
+              return (
+                <div
+                  key={`${font.id}-${index}`}
+                  className="border border-border rounded-lg pl-4 pr-0 pt-0 pb-0 bg-card/60 flex flex-col sm:flex-row gap-0"
+                >
+                  <div className="flex-1 min-w-0 space-y-2 pt-4 pb-4">
+                    <p className="font-semibold text-sm text-foreground">{font.name}</p>
+                    {font.usage && (
+                      <p className="text-xs text-muted-foreground">{font.usage}</p>
+                    )}
+                    {font.weights && font.weights.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        Weights: {font.weights.join(', ')}
+                      </p>
+                    )}
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {font.googleFontUrl && (
+                        <Button asChild size="sm" variant="outline">
+                          <a href={font.googleFontUrl} target="_blank" rel="noreferrer">
+                            View font page
+                          </a>
+                        </Button>
+                      )}
+                      {font.downloadUrl && (
+                        <Button asChild size="sm">
+                          <a href={font.downloadUrl} download>
+                            Download font files
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  {previewSrc && (
+                    <div className="shrink-0 w-full sm:w-48 sm:max-w-[12rem] sm:self-stretch relative rounded-b-lg sm:rounded-b-none sm:rounded-r-lg overflow-hidden bg-muted/20">
+                      <Image
+                        src={previewSrc}
+                        alt={`${font.name} sample`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 640px) 100vw, 12rem"
+                      />
+                    </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
 
       {/* Icons / Project logos */}
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-white">Icons &amp; Project Logos</h2>
+        <h2 className="text-xl font-semibold text-foreground">Icons &amp; Project Logos</h2>
         {loading ? (
           <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
             <table className="min-w-full text-sm">
@@ -735,7 +778,7 @@ function BrandAssetsContent() {
                         )}
                       </td>
                       <td className="px-3 py-2 align-middle">
-                        <span className="text-sm text-white">{asset.name}</span>
+                        <span className="text-sm text-foreground">{asset.name}</span>
                       </td>
                       <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
                         {asset.type === 'icon' ? 'Icon' : 'Project logo'}

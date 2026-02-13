@@ -37,6 +37,7 @@ export interface BrandAsset {
   downloadR2Key?: string;
   downloadUrl?: string;
   weights?: string[];
+  previewImageUrl?: string; // Sample/preview image for font cards
 
   // Generic metadata
   tags?: string[];
@@ -107,6 +108,7 @@ export async function saveBrandAsset(asset: BrandAsset): Promise<boolean> {
       downloadR2Key: asset.downloadR2Key || '',
       downloadUrl: asset.downloadUrl || '',
       weights: asset.weights ? JSON.stringify(asset.weights) : '[]',
+      previewImageUrl: asset.previewImageUrl || '',
       tags: asset.tags ? JSON.stringify(asset.tags) : '[]',
       fileSizeBytes: asset.fileSizeBytes ?? 0,
       width: asset.width ?? 0,
@@ -172,6 +174,7 @@ function mapHashToBrandAsset(data: Record<string, unknown> | null): BrandAsset |
     downloadR2Key: (data.downloadR2Key as string) || undefined,
     downloadUrl: (data.downloadUrl as string) || undefined,
     weights: parseJsonArray(data.weights),
+    previewImageUrl: (data.previewImageUrl as string) || undefined,
     tags: parseJsonArray(data.tags),
     fileSizeBytes: data.fileSizeBytes ? Number(data.fileSizeBytes) : undefined,
     width: data.width ? Number(data.width) : undefined,

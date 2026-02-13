@@ -28,7 +28,7 @@ export default function Home() {
           </div>
           
           {/* Main heading */}
-          <h1 className="text-5xl font-bold text-white w-full text-center">
+          <h1 className="text-5xl font-bold text-foreground w-full text-center">
             Optimise quickly. Publish sooner.
           </h1>
           
@@ -40,7 +40,7 @@ export default function Home() {
         
         {/* Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 [&>*]:transition-transform [&>*]:duration-300 [&:has(>*:hover)>*]:scale-[0.98] [&>*:hover]:scale-[1.02]">
-          <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-white/20">
+          <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-foreground/20">
             <div className="px-0">
               <Image
                 src="/webo-cover.webp"
@@ -52,7 +52,7 @@ export default function Home() {
               />
             </div>
             <CardHeader className="text-left pb-0 px-0">
-              <CardTitle className="text-lg font-bold text-white">Webopedia News Overlay</CardTitle>
+              <CardTitle className="text-lg font-bold text-foreground">Webopedia News Overlay</CardTitle>
             </CardHeader>
             <CardContent className="text-left pt-0 px-0">
               <div className="text-muted-foreground text-sm">
@@ -77,7 +77,7 @@ export default function Home() {
               </Link>
             </CardFooter>
           </Card>
-          <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-white/20">
+          <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-foreground/20">
             <div className="px-0">
               <Image
                 src="/ccn-cover.webp"
@@ -89,7 +89,7 @@ export default function Home() {
               />
             </div>
             <CardHeader className="text-left pb-0 px-0">
-              <CardTitle className="text-lg font-bold text-white">CCN Image Optimiser</CardTitle>
+              <CardTitle className="text-lg font-bold text-foreground">CCN Image Optimiser</CardTitle>
             </CardHeader>
             <CardContent className="text-left pt-0 px-0">
               <div className="text-muted-foreground text-sm">
@@ -112,14 +112,14 @@ export default function Home() {
               </Link>
             </CardFooter>
           </Card>
-          <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-white/20">
+          <Card className="h-full gap-6 p-6 transition-all duration-300 hover:border-foreground/20">
             <div className="px-0">
               <div className="w-full aspect-video bg-gradient-to-br from-red-600 to-red-800 rounded-lg flex items-center justify-center">
-                <div className="text-white text-4xl">▶</div>
+                <div className="text-foreground text-4xl">▶</div>
               </div>
             </div>
             <CardHeader className="text-left pb-0 px-0">
-              <CardTitle className="text-lg font-bold text-white">YouTube Video Thumbnail</CardTitle>
+              <CardTitle className="text-lg font-bold text-foreground">YouTube Video Thumbnail</CardTitle>
             </CardHeader>
             <CardContent className="text-left pt-0 px-0">
               <div className="text-muted-foreground text-sm">

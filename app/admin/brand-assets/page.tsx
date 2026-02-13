@@ -133,6 +133,8 @@ export default function AdminBrandAssetsPage() {
   const [fontUsage, setFontUsage] = useState('');
   const [fontGoogleUrl, setFontGoogleUrl] = useState('');
   const [fontDownloadUrl, setFontDownloadUrl] = useState('');
+  const [fontPreviewUrl, setFontPreviewUrl] = useState<string | null>(null);
+  const [uploadingFontPreview, setUploadingFontPreview] = useState(false);
   const [editingFontId, setEditingFontId] = useState<string | null>(null);
   const [fontToDelete, setFontToDelete] = useState<BrandAsset | null>(null);
   const [isDeletingFont, setIsDeletingFont] = useState(false);
@@ -275,12 +277,14 @@ export default function AdminBrandAssetsPage() {
         setFontUsage(font.usage || '');
         setFontGoogleUrl(font.googleFontUrl || '');
         setFontDownloadUrl(font.downloadUrl || '');
+        setFontPreviewUrl(font.previewImageUrl || null);
       }
     } else {
       setFontName('');
       setFontUsage('');
       setFontGoogleUrl('');
       setFontDownloadUrl('');
+      setFontPreviewUrl(null);
     }
   }, [editingFontId, assets]);
 
@@ -571,6 +575,30 @@ export default function AdminBrandAssetsPage() {
     }
   };
 
+  const handleFontPreviewFile = async (file: File) => {
+    try {
+      setUploadingFontPreview(true);
+      setError(null);
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/brand-assets/upload-font-preview', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || data.details || 'Failed to upload preview image');
+      }
+      const data = await res.json();
+      if (data.publicUrl) setFontPreviewUrl(data.publicUrl);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Failed to upload preview image');
+    } finally {
+      setUploadingFontPreview(false);
+    }
+  };
+
   const handleCreateFont = async () => {
     if (!fontName.trim()) return;
 
@@ -583,6 +611,7 @@ export default function AdminBrandAssetsPage() {
         usage: fontUsage.trim() || undefined,
         googleFontUrl: fontGoogleUrl.trim() || undefined,
         downloadUrl: fontDownloadUrl.trim() || undefined,
+        previewImageUrl: fontPreviewUrl ?? '',
       };
 
       const res = editingFontId
@@ -621,6 +650,7 @@ export default function AdminBrandAssetsPage() {
       setFontUsage('');
       setFontGoogleUrl('');
       setFontDownloadUrl('');
+      setFontPreviewUrl(null);
     } catch (err) {
       console.error(err);
       setError(
@@ -695,7 +725,7 @@ export default function AdminBrandAssetsPage() {
     <main className="min-h-screen w-full max-w-6xl mx-auto px-4 py-10 space-y-10">
       <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-white">Brand Assets Admin</h1>
+          <h1 className="text-2xl font-bold text-foreground">Brand Assets Admin</h1>
           <p className="text-sm text-muted-foreground max-w-2xl">
             Upload logos and icons, define colours and fonts for designers to use across the brand.
           </p>
@@ -729,7 +759,7 @@ export default function AdminBrandAssetsPage() {
       {/* Upload logos */}
       <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">Logos</h2>
+          <h2 className="text-lg font-semibold text-foreground">Logos</h2>
           <p className="text-xs text-muted-foreground">
             These files power the Logos section on the public brand assets page.
           </p>
@@ -847,7 +877,7 @@ export default function AdminBrandAssetsPage() {
         ) : (
           <div className="pt-4 space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-sm font-medium text-white/80">Existing logos</h3>
+              <h3 className="text-sm font-medium text-foreground/80">Existing logos</h3>
               <p className="text-xs text-muted-foreground">
                 Click edit to change logo name, description or tags.
               </p>
@@ -884,7 +914,7 @@ export default function AdminBrandAssetsPage() {
                       </td>
                       <td className="px-3 py-2 align-middle">
                         <div className="flex flex-col gap-1">
-                          <span className="text-xs font-medium text-white">{logo.name}</span>
+                          <span className="text-xs font-medium text-foreground">{logo.name}</span>
                           {logo.description && (
                             <span className="text-[11px] text-muted-foreground">
                               {logo.description}
@@ -925,7 +955,7 @@ export default function AdminBrandAssetsPage() {
               <div className="mt-4 border border-border rounded-lg bg-card/70 p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <h3 className="text-sm font-semibold text-white">
+                    <h3 className="text-sm font-semibold text-foreground">
                       Edit logo details
                     </h3>
                     <p className="text-xs text-muted-foreground">
@@ -1016,7 +1046,7 @@ export default function AdminBrandAssetsPage() {
       {/* Icons & Project logos */}
       <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">Icons &amp; Project Logos</h2>
+          <h2 className="text-lg font-semibold text-foreground">Icons &amp; Project Logos</h2>
           <p className="text-xs text-muted-foreground">
             These files power the Icons &amp; Project Logos table on the public page.
           </p>
@@ -1120,7 +1150,7 @@ export default function AdminBrandAssetsPage() {
           <p className="text-sm text-muted-foreground">No icons or project logos uploaded yet.</p>
         ) : (
           <div className="pt-4 space-y-3">
-            <h3 className="text-sm font-medium text-white/80">
+            <h3 className="text-sm font-medium text-foreground/80">
               Existing icons &amp; project logos
             </h3>
             <div className="overflow-x-auto border border-border rounded-lg bg-card/60">
@@ -1157,7 +1187,7 @@ export default function AdminBrandAssetsPage() {
                         )}
                       </td>
                       <td className="px-3 py-2 align-middle">
-                        <span className="text-xs font-medium text-white truncate">
+                        <span className="text-xs font-medium text-foreground truncate">
                           {asset.name}
                         </span>
                       </td>
@@ -1189,7 +1219,7 @@ export default function AdminBrandAssetsPage() {
 
       {/* Font assets */}
       <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
-        <h2 className="text-lg font-semibold text-white">Fonts</h2>
+        <h2 className="text-lg font-semibold text-foreground">Fonts</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Font form */}
           <div className="space-y-3">
@@ -1236,6 +1266,45 @@ export default function AdminBrandAssetsPage() {
                 onChange={(e) => setFontDownloadUrl(e.target.value)}
                 placeholder="Link to zipped font files (if available)"
               />
+            </div>
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Preview image (optional)
+              </label>
+              <div className="flex flex-wrap items-start gap-2">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                  className="text-xs text-foreground file:mr-2 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-primary-foreground"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFontPreviewFile(f);
+                    e.target.value = '';
+                  }}
+                  disabled={uploadingFontPreview}
+                />
+                {fontPreviewUrl && (
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={fontPreviewUrl}
+                      alt="Preview"
+                      className="h-16 w-auto rounded border border-border object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFontPreviewUrl(null)}
+                      disabled={uploadingFontPreview}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                )}
+                {uploadingFontPreview && (
+                  <span className="text-xs text-muted-foreground">Uploading…</span>
+                )}
+              </div>
             </div>
             <div className="flex gap-2">
               <Button
@@ -1289,7 +1358,7 @@ export default function AdminBrandAssetsPage() {
                     <div className="space-y-1 mt-1">
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-0.5">
-                          <p className="text-sm font-medium text-white">{font.name}</p>
+                          <p className="text-sm font-medium text-foreground">{font.name}</p>
                           {font.usage && (
                             <p className="text-xs text-muted-foreground line-clamp-3">
                               {font.usage}
@@ -1352,7 +1421,7 @@ export default function AdminBrandAssetsPage() {
 
       {/* Colour assets */}
       <section className="space-y-4 border border-border rounded-lg p-4 bg-card/60">
-        <h2 className="text-lg font-semibold text-white">Colours</h2>
+        <h2 className="text-lg font-semibold text-foreground">Colours</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-3">
             <div className="space-y-1">
@@ -1468,7 +1537,7 @@ export default function AdminBrandAssetsPage() {
                           </div>
                           <div className="space-y-0.5">
                             <div className="flex items-center justify-between gap-1">
-                              <p className="text-xs font-medium text-white">{color.name}</p>
+                              <p className="text-xs font-medium text-foreground">{color.name}</p>
                               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                                 {(color.colorCategory || 'primary') === 'primary' ? 'Primary' : 'Secondary'}
                               </span>
@@ -1511,13 +1580,13 @@ export default function AdminBrandAssetsPage() {
                     <>
                       {primary.length > 0 && (
                         <div className="space-y-2">
-                          <p className="text-xs font-medium text-white/80">Primary</p>
+                          <p className="text-xs font-medium text-foreground/80">Primary</p>
                           {renderGrid(primary)}
                         </div>
                       )}
                       {secondary.length > 0 && (
                         <div className="space-y-2">
-                          <p className="text-xs font-medium text-white/80">Secondary</p>
+                          <p className="text-xs font-medium text-foreground/80">Secondary</p>
                           {renderGrid(secondary)}
                         </div>
                       )}
