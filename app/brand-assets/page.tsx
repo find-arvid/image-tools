@@ -19,6 +19,7 @@ type SectionedAssets = Record<BrandAssetType, BrandAsset[]>;
 
 const initialSections: SectionedAssets = {
   logo: [],
+  'logo-version': [],
   color: [],
   font: [],
   icon: [],
@@ -180,6 +181,7 @@ function BrandAssetsContent() {
         // items across React Strict Mode double-invocations in dev.
         const sections: SectionedAssets = {
           logo: [],
+          'logo-version': [],
           color: [],
           font: [],
           icon: [],
@@ -227,7 +229,7 @@ function BrandAssetsContent() {
   const displayBrand =
     BRAND_LABELS[brand.toLowerCase() as keyof typeof BRAND_LABELS] ?? 'Find.co';
 
-  const sortedLogos = [...assetsByType.logo].sort(
+  const sortedLogos = [...(assetsByType.logo ?? []), ...(assetsByType['logo-version'] ?? [])].sort(
     (a, b) => (a.order ?? 999999) - (b.order ?? 999999)
   );
 
@@ -246,7 +248,7 @@ function BrandAssetsContent() {
       </header>
 
       {error && (
-        <p className="text-sm text-red-400">Error: {error}</p>
+        <p className="text-sm text-destructive">Error: {error}</p>
       )}
 
       {/* Logos */}
@@ -330,7 +332,7 @@ function BrandAssetsContent() {
               ))}
             </div>
           )
-        ) : assetsByType.logo.length === 0 ? (
+        ) : (assetsByType.logo?.length ?? 0) + (assetsByType['logo-version']?.length ?? 0) === 0 ? (
           <p className="text-muted-foreground text-sm">No logos added yet.</p>
         ) : (
           <>
@@ -349,21 +351,27 @@ function BrandAssetsContent() {
                   </thead>
                   <tbody>
                     {sortedLogos.map((logo, index) => {
+                      const isLogoVersion = logo.type === 'logo-version';
+                      const previewUrl = isLogoVersion
+                        ? (logo.pngPublicUrl || logo.svgPublicUrl)
+                        : logo.publicUrl;
                       const dim = dimensions[logo.id];
                       const res =
                         dim?.width && dim.height
                           ? `${dim.width} × ${dim.height}`
                           : logo.width && logo.height
                           ? `${logo.width} × ${logo.height}`
+                          : isLogoVersion && logo.pngWidth != null && logo.pngHeight != null
+                          ? `${logo.pngWidth} × ${logo.pngHeight}`
                           : '—';
                       return (
                         <tr key={`${logo.id}-${index}`} className="border-t border-border/60">
                           <td className="px-3 py-2 align-middle">
-                            {logo.publicUrl && (
+                            {previewUrl && (
                               <div className="h-10 w-20 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
-                                  src={logo.publicUrl}
+                                  src={previewUrl}
                                   alt={logo.name}
                                   className="max-h-full max-w-full object-contain"
                                   onLoad={handleImageLoad(logo.id)}
@@ -384,7 +392,7 @@ function BrandAssetsContent() {
                                   {logo.tags.map((tag) => (
                                     <span
                                       key={tag}
-                                      className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                                      className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs uppercase tracking-wide text-muted-foreground"
                                     >
                                       {tag}
                                     </span>
@@ -394,8 +402,21 @@ function BrandAssetsContent() {
                             </div>
                           </td>
                           <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                            {logo.format ? (
-                              <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-mono uppercase">
+                            {isLogoVersion ? (
+                              <span className="inline-flex flex-wrap gap-1">
+                                {logo.pngPublicUrl && (
+                                  <span className="inline-flex rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs font-mono uppercase">
+                                    PNG
+                                  </span>
+                                )}
+                                {logo.svgPublicUrl && (
+                                  <span className="inline-flex rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs font-mono uppercase">
+                                    SVG
+                                  </span>
+                                )}
+                              </span>
+                            ) : logo.format ? (
+                              <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs font-mono uppercase">
                                 {logo.format.toUpperCase()}
                               </span>
                             ) : (
@@ -406,10 +427,35 @@ function BrandAssetsContent() {
                             {res}
                           </td>
                           <td className="px-3 py-2 align-middle text-xs text-muted-foreground">
-                            {formatBytes(logo.fileSizeBytes)}
+                            {isLogoVersion
+                              ? `PNG: ${formatBytes(logo.pngFileSizeBytes)} / SVG: ${formatBytes(logo.svgFileSizeBytes)}`
+                              : formatBytes(logo.fileSizeBytes)}
                           </td>
                           <td className="px-3 py-2 align-middle text-right">
-                            {logo.publicUrl && (
+                            {isLogoVersion ? (
+                              <div className="flex justify-end gap-1">
+                                {logo.pngPublicUrl && (
+                                  <Button asChild size="icon" variant="outline">
+                                    <a
+                                      href={`/api/brand-assets/${logo.id}/download?format=png`}
+                                      aria-label={`Download ${logo.name} (PNG)`}
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </a>
+                                  </Button>
+                                )}
+                                {logo.svgPublicUrl && (
+                                  <Button asChild size="icon" variant="outline">
+                                    <a
+                                      href={`/api/brand-assets/${logo.id}/download?format=svg`}
+                                      aria-label={`Download ${logo.name} (SVG)`}
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </a>
+                                  </Button>
+                                )}
+                              </div>
+                            ) : logo.publicUrl ? (
                               <Button asChild size="icon" variant="outline">
                                 <a
                                   href={`/api/brand-assets/${logo.id}/download`}
@@ -418,7 +464,7 @@ function BrandAssetsContent() {
                                   <Download className="w-4 h-4" />
                                 </a>
                               </Button>
-                            )}
+                            ) : null}
                           </td>
                         </tr>
                       );
@@ -429,12 +475,18 @@ function BrandAssetsContent() {
             ) : (
               <div className="flex flex-wrap gap-4">
                 {sortedLogos.map((logo, index) => {
+                  const isLogoVersion = logo.type === 'logo-version';
+                  const previewUrl = isLogoVersion
+                    ? (logo.pngPublicUrl || logo.svgPublicUrl)
+                    : logo.publicUrl;
                   const dim = dimensions[logo.id];
                   const res =
                     dim?.width && dim.height
                       ? `${dim.width} × ${dim.height}`
                       : logo.width && logo.height
                       ? `${logo.width} × ${logo.height}`
+                      : isLogoVersion && logo.pngWidth && logo.pngHeight
+                      ? `${logo.pngWidth} × ${logo.pngHeight}`
                       : '—';
                   return (
                     <div
@@ -459,10 +511,10 @@ function BrandAssetsContent() {
                           backgroundPosition: '0 0, 0 12px, 12px -12px, -12px 0px, 0 0, 0 12px, 12px -12px, -12px 0px',
                         }}
                       >
-                        {logo.publicUrl && (
+                        {previewUrl && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={logo.publicUrl}
+                            src={previewUrl}
                             alt={logo.name}
                             className="max-h-full max-w-full object-contain"
                             onLoad={handleImageLoad(logo.id)}
@@ -476,22 +528,43 @@ function BrandAssetsContent() {
                             {logo.description}
                           </p>
                         )}
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
-                          <span>
-                            <span className="font-semibold">Size: </span>
-                            {formatBytes(logo.fileSizeBytes)}
-                          </span>
-                          <span>
-                            <span className="font-semibold">Res: </span>
-                            {res}
-                          </span>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
+                          {isLogoVersion ? (
+                            <>
+                              <span>
+                                <span className="font-semibold">PNG: </span>
+                                {formatBytes(logo.pngFileSizeBytes)}
+                              </span>
+                              <span>
+                                <span className="font-semibold">SVG: </span>
+                                {formatBytes(logo.svgFileSizeBytes)}
+                              </span>
+                              {logo.pngWidth != null && logo.pngHeight != null && (
+                                <span>
+                                  <span className="font-semibold">Res: </span>
+                                  {res}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span>
+                                <span className="font-semibold">Size: </span>
+                                {formatBytes(logo.fileSizeBytes)}
+                              </span>
+                              <span>
+                                <span className="font-semibold">Res: </span>
+                                {res}
+                              </span>
+                            </>
+                          )}
                         </div>
                         {logo.tags && logo.tags.length > 0 && (
                           <div className="mt-1 flex flex-wrap gap-1">
                             {logo.tags.map((tag) => (
                               <span
                                 key={tag}
-                                className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                                className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs uppercase tracking-wide text-muted-foreground"
                               >
                                 {tag}
                               </span>
@@ -499,21 +572,60 @@ function BrandAssetsContent() {
                           </div>
                         )}
                       </div>
-                      <div className="mt-auto flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                        {logo.format && (
-                          <span className="inline-flex items-center rounded-md border border-border bg-muted/60 px-2.5 py-1 text-sm font-semibold uppercase tracking-wide text-foreground">
-                            {logo.format}
-                          </span>
-                        )}
-                        {logo.publicUrl && (
-                          <Button asChild size="icon" variant="outline" className="ml-auto shrink-0">
-                            <a
-                              href={`/api/brand-assets/${logo.id}/download`}
-                              aria-label={`Download ${logo.name}`}
-                            >
-                              <Download className="w-4 h-4" />
-                            </a>
-                          </Button>
+                      <div className="mt-auto flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {isLogoVersion ? (
+                          <>
+                            {logo.pngPublicUrl && (
+                              <span className="inline-flex items-center rounded-md border border-border bg-muted/60 px-2.5 py-1 text-sm font-semibold uppercase tracking-wide text-foreground">
+                                PNG
+                              </span>
+                            )}
+                            {logo.svgPublicUrl && (
+                              <span className="inline-flex items-center rounded-md border border-border bg-muted/60 px-2.5 py-1 text-sm font-semibold uppercase tracking-wide text-foreground">
+                                SVG
+                              </span>
+                            )}
+                            <div className="flex gap-1 ml-auto shrink-0">
+                              {logo.pngPublicUrl && (
+                                <Button asChild size="icon" variant="outline">
+                                  <a
+                                    href={`/api/brand-assets/${logo.id}/download?format=png`}
+                                    aria-label={`Download ${logo.name} (PNG)`}
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                              {logo.svgPublicUrl && (
+                                <Button asChild size="icon" variant="outline">
+                                  <a
+                                    href={`/api/brand-assets/${logo.id}/download?format=svg`}
+                                    aria-label={`Download ${logo.name} (SVG)`}
+                                  >
+                                    <Download className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {logo.format && (
+                              <span className="inline-flex items-center rounded-md border border-border bg-muted/60 px-2.5 py-1 text-sm font-semibold uppercase tracking-wide text-foreground">
+                                {logo.format}
+                              </span>
+                            )}
+                            {logo.publicUrl && (
+                              <Button asChild size="icon" variant="outline" className="ml-auto shrink-0">
+                                <a
+                                  href={`/api/brand-assets/${logo.id}/download`}
+                                  aria-label={`Download ${logo.name}`}
+                                >
+                                  <Download className="w-4 h-4" />
+                                </a>
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     </div>

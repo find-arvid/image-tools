@@ -214,7 +214,7 @@ export default function AdminImagesPage() {
             <input {...getInputProps()} />
             {selectedFile ? (
               <div className="space-y-2">
-                <Check className="w-12 h-12 mx-auto text-green-500" />
+                <Check className="w-12 h-12 mx-auto text-muted-foreground" />
                 <p className="font-medium">{selectedFile.name}</p>
                 <p className="text-sm text-muted-foreground">
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
@@ -424,7 +424,7 @@ export default function AdminImagesPage() {
 
         {/* Delete Confirmation Modal */}
         {imageToDelete && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-soft-black-950/50 flex items-center justify-center z-50 p-4">
             <div className="bg-card border border-card-border rounded-lg p-6 max-w-md w-full space-y-4">
               <h3 className="text-lg font-semibold">Delete Image</h3>
               <p className="text-muted-foreground">

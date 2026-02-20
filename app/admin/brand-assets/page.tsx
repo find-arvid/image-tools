@@ -160,6 +160,12 @@ export default function AdminBrandAssetsPage() {
   const [menuLogoFile, setMenuLogoFile] = useState<File | null>(null);
   const [menuLogoPreviewUrl, setMenuLogoPreviewUrl] = useState<string | null>(null);
   const [menuLogoUploading, setMenuLogoUploading] = useState(false);
+  // Logo version (one record with PNG + SVG)
+  const [logoVersionName, setLogoVersionName] = useState('');
+  const [logoVersionDescription, setLogoVersionDescription] = useState('');
+  const [logoVersionPng, setLogoVersionPng] = useState<File | null>(null);
+  const [logoVersionSvg, setLogoVersionSvg] = useState<File | null>(null);
+  const [logoVersionUploading, setLogoVersionUploading] = useState(false);
 
   useEffect(() => {
     if (logoFile && logoFile.type.startsWith('image/')) {
@@ -225,6 +231,30 @@ export default function AdminBrandAssetsPage() {
     maxFiles: 1,
   });
 
+  const {
+    getRootProps: getLogoVersionPngProps,
+    getInputProps: getLogoVersionPngInputProps,
+    isDragActive: isLogoVersionPngDragActive,
+  } = useDropzone({
+    onDrop: acceptedFiles => {
+      if (acceptedFiles.length > 0) setLogoVersionPng(acceptedFiles[0]);
+    },
+    accept: { 'image/png': ['.png'] },
+    maxFiles: 1,
+  });
+
+  const {
+    getRootProps: getLogoVersionSvgProps,
+    getInputProps: getLogoVersionSvgInputProps,
+    isDragActive: isLogoVersionSvgDragActive,
+  } = useDropzone({
+    onDrop: acceptedFiles => {
+      if (acceptedFiles.length > 0) setLogoVersionSvg(acceptedFiles[0]);
+    },
+    accept: { 'image/svg+xml': ['.svg'] },
+    maxFiles: 1,
+  });
+
   // Always jump to top when opening this page
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -273,10 +303,10 @@ export default function AdminBrandAssetsPage() {
     setOrderedFonts(fnts);
   }, [assets]);
 
-  // Sync ordered logos when assets load
+  // Sync ordered logos when assets load (single-file logos + logo versions)
   useEffect(() => {
     const logos = assets
-      .filter((a): a is BrandAsset => a.type === 'logo')
+      .filter((a): a is BrandAsset => a.type === 'logo' || a.type === 'logo-version')
       .sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
     setOrderedLogos(logos);
   }, [assets]);
@@ -393,6 +423,36 @@ export default function AdminBrandAssetsPage() {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
       setLogoUploading(false);
+    }
+  };
+
+  const uploadLogoVersion = async () => {
+    if (!logoVersionName.trim() || !logoVersionPng || !logoVersionSvg) return;
+    setLogoVersionUploading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('name', logoVersionName.trim());
+      if (logoVersionDescription.trim()) formData.append('description', logoVersionDescription.trim());
+      formData.append('brand', selectedBrand);
+      formData.append('png', logoVersionPng);
+      formData.append('svg', logoVersionSvg);
+
+      const res = await fetch('/api/brand-assets/logo-version', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || body.details || `Upload failed: ${res.status}`);
+      }
+      await loadAssets();
+      setLogoVersionName('');
+      setLogoVersionDescription('');
+      setLogoVersionPng(null);
+      setLogoVersionSvg(null);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Logo version upload failed');
+    } finally {
+      setLogoVersionUploading(false);
     }
   };
 
@@ -640,7 +700,7 @@ export default function AdminBrandAssetsPage() {
     if (!draggedLogoId) return;
     setDraggedLogoId(null);
     const prevOrdered = assets
-      .filter((a): a is BrandAsset => a.type === 'logo')
+      .filter((a): a is BrandAsset => a.type === 'logo' || a.type === 'logo-version')
       .sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
     const orderChanged =
       orderedLogos.length !== prevOrdered.length ||
@@ -795,7 +855,7 @@ export default function AdminBrandAssetsPage() {
     }
   };
 
-  const logos = assets.filter(a => a.type === 'logo');
+  const logos = assets.filter(a => a.type === 'logo' || a.type === 'logo-version');
   const colors = assets.filter(a => a.type === 'color');
   const fonts = assets.filter(a => a.type === 'font');
   const icons = assets.filter(a => a.type === 'icon');
@@ -885,7 +945,7 @@ export default function AdminBrandAssetsPage() {
       </header>
 
       {error && (
-        <p className="text-sm text-red-400">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
 
       {/* Logo in site navigation (Brand assets dropdown) */}
@@ -1110,6 +1170,80 @@ export default function AdminBrandAssetsPage() {
           </div>
         </div>
 
+        <div className="border-t border-border pt-4 mt-4 space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Create logo version (PNG + SVG)</h3>
+          <p className="text-xs text-muted-foreground">
+            One card on the public page with two download options: PNG and SVG.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-medium text-muted-foreground">Name</label>
+              <input
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+                value={logoVersionName}
+                onChange={e => setLogoVersionName(e.target.value)}
+                placeholder="e.g. Primary logo"
+              />
+              <label className="block text-xs font-medium text-muted-foreground">Description</label>
+              <textarea
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground min-h-[60px]"
+                value={logoVersionDescription}
+                onChange={e => setLogoVersionDescription(e.target.value)}
+                placeholder="Optional"
+              />
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">PNG file</label>
+                <div
+                  {...getLogoVersionPngProps()}
+                  className={`flex items-center justify-center border border-dashed rounded-md px-4 py-6 text-sm cursor-pointer ${
+                    isLogoVersionPngDragActive ? 'border-white/60 bg-white/5' : 'border-border'
+                  }`}
+                >
+                  <input {...getLogoVersionPngInputProps()} />
+                  {logoVersionPng ? (
+                    <span className="text-muted-foreground">{logoVersionPng.name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Drop PNG or click</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">SVG file</label>
+                <div
+                  {...getLogoVersionSvgProps()}
+                  className={`flex items-center justify-center border border-dashed rounded-md px-4 py-6 text-sm cursor-pointer ${
+                    isLogoVersionSvgDragActive ? 'border-white/60 bg-white/5' : 'border-border'
+                  }`}
+                >
+                  <input {...getLogoVersionSvgInputProps()} />
+                  {logoVersionSvg ? (
+                    <span className="text-muted-foreground">{logoVersionSvg.name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">Drop SVG or click</span>
+                  )}
+                </div>
+              </div>
+              <Button
+                type="button"
+                onClick={uploadLogoVersion}
+                disabled={!logoVersionName.trim() || !logoVersionPng || !logoVersionSvg || logoVersionUploading}
+                className="w-full"
+              >
+                {logoVersionUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Creating…
+                  </>
+                ) : (
+                  'Create logo version'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Existing logos overview */}
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading existing logos…</p>
@@ -1155,22 +1289,33 @@ export default function AdminBrandAssetsPage() {
                         <GripVertical className="h-4 w-4 text-muted-foreground" />
                       </td>
                       <td className="px-3 py-2 align-middle">
-                        {logo.publicUrl && (
-                          <div className="h-10 w-20 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={logo.publicUrl}
-                              alt={logo.name}
-                              className="max-h-full max-w-full object-contain"
-                            />
-                          </div>
-                        )}
+                        {(() => {
+                          const previewUrl = logo.type === 'logo-version'
+                            ? (logo.pngPublicUrl || logo.svgPublicUrl)
+                            : logo.publicUrl;
+                          return previewUrl ? (
+                            <div className="h-10 w-20 bg-muted/20 rounded-md flex items-center justify-center overflow-hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={previewUrl}
+                                alt={logo.name}
+                                className="max-h-full max-w-full object-contain"
+                              />
+                            </div>
+                          ) : null;
+                        })()}
                       </td>
                       <td className="px-3 py-2 align-middle">
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-medium text-foreground">{logo.name}</span>
+                          {logo.type === 'logo-version' && (
+                            <span className="inline-flex gap-1">
+                              <span className="inline-flex rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-mono uppercase">PNG</span>
+                              <span className="inline-flex rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-mono uppercase">SVG</span>
+                            </span>
+                          )}
                           {logo.description && (
-                            <span className="text-[11px] text-muted-foreground">
+                            <span className="text-xs text-muted-foreground">
                               {logo.description}
                             </span>
                           )}
@@ -1179,7 +1324,7 @@ export default function AdminBrandAssetsPage() {
                               {logo.tags.map((tag) => (
                                 <span
                                   key={tag}
-                                  className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                                  className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs uppercase tracking-wide text-muted-foreground"
                                 >
                                   {tag}
                                 </span>
@@ -1460,7 +1605,7 @@ export default function AdminBrandAssetsPage() {
                             {asset.tags.map((tag) => (
                               <span
                                 key={tag}
-                                className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground"
+                                className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs uppercase tracking-wide text-muted-foreground"
                               >
                                 {tag}
                               </span>
@@ -1798,13 +1943,13 @@ export default function AdminBrandAssetsPage() {
                           <div className="space-y-0.5">
                             <div className="flex items-center justify-between gap-1">
                               <p className="text-xs font-medium text-foreground">{color.name}</p>
-                              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                              <span className="text-xs uppercase tracking-wide text-muted-foreground">
                                 {(color.colorCategory || 'primary') === 'primary' ? 'Primary' : 'Secondary'}
                               </span>
                             </div>
-                            <p className="text-[11px] text-muted-foreground">{color.hex}</p>
+                            <p className="text-xs text-muted-foreground">{color.hex}</p>
                             {color.usage && (
-                              <p className="text-[11px] text-muted-foreground line-clamp-2">
+                              <p className="text-xs text-muted-foreground line-clamp-2">
                                 {color.usage}
                               </p>
                             )}
@@ -1867,7 +2012,7 @@ export default function AdminBrandAssetsPage() {
 
       {/* Delete colour confirmation modal */}
       {colorToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-soft-black-950/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-card-border rounded-lg p-6 max-w-md w-full space-y-4">
             <h3 className="text-lg font-semibold">Delete colour</h3>
             <p className="text-muted-foreground">
@@ -1905,7 +2050,7 @@ export default function AdminBrandAssetsPage() {
 
       {/* Delete font confirmation modal */}
       {fontToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-soft-black-950/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card border border-card-border rounded-lg p-6 max-w-md w-full space-y-4">
             <h3 className="text-lg font-semibold">Delete font</h3>
             <p className="text-muted-foreground">

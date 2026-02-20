@@ -6,7 +6,7 @@
 import { Redis } from '@upstash/redis';
 
 // Brand asset types
-export type BrandAssetType = 'logo' | 'color' | 'font' | 'icon' | 'project-logo' | 'menu-logo';
+export type BrandAssetType = 'logo' | 'logo-version' | 'color' | 'font' | 'icon' | 'project-logo' | 'menu-logo';
 
 export interface BrandAsset {
   id: string;
@@ -23,6 +23,16 @@ export interface BrandAsset {
   publicUrl?: string;
   format?: string; // e.g. svg, png, webp
   variants?: string[]; // e.g. ['horizontal', 'stacked', 'mono']
+
+  // Logo version: one record with PNG + SVG (both optional until uploaded)
+  pngR2Key?: string;
+  pngPublicUrl?: string;
+  pngFileSizeBytes?: number;
+  pngWidth?: number;
+  pngHeight?: number;
+  svgR2Key?: string;
+  svgPublicUrl?: string;
+  svgFileSizeBytes?: number;
 
   // Color assets
   hex?: string; // #RRGGBB
@@ -100,6 +110,14 @@ export async function saveBrandAsset(asset: BrandAsset): Promise<boolean> {
       publicUrl: asset.publicUrl || '',
       format: asset.format || '',
       variants: asset.variants ? JSON.stringify(asset.variants) : '[]',
+      pngR2Key: asset.pngR2Key || '',
+      pngPublicUrl: asset.pngPublicUrl || '',
+      pngFileSizeBytes: asset.pngFileSizeBytes ?? 0,
+      pngWidth: asset.pngWidth ?? 0,
+      pngHeight: asset.pngHeight ?? 0,
+      svgR2Key: asset.svgR2Key || '',
+      svgPublicUrl: asset.svgPublicUrl || '',
+      svgFileSizeBytes: asset.svgFileSizeBytes ?? 0,
       hex: asset.hex || '',
       rgb: asset.rgb || '',
       usage: asset.usage || '',
@@ -166,6 +184,14 @@ function mapHashToBrandAsset(data: Record<string, unknown> | null): BrandAsset |
     publicUrl: (data.publicUrl as string) || undefined,
     format: (data.format as string) || undefined,
     variants: parseJsonArray(data.variants),
+    pngR2Key: (data.pngR2Key as string) || undefined,
+    pngPublicUrl: (data.pngPublicUrl as string) || undefined,
+    pngFileSizeBytes: data.pngFileSizeBytes ? Number(data.pngFileSizeBytes) : undefined,
+    pngWidth: data.pngWidth ? Number(data.pngWidth) : undefined,
+    pngHeight: data.pngHeight ? Number(data.pngHeight) : undefined,
+    svgR2Key: (data.svgR2Key as string) || undefined,
+    svgPublicUrl: (data.svgPublicUrl as string) || undefined,
+    svgFileSizeBytes: data.svgFileSizeBytes ? Number(data.svgFileSizeBytes) : undefined,
     hex: (data.hex as string) || undefined,
     rgb: (data.rgb as string) || undefined,
     usage: (data.usage as string) || undefined,

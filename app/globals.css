@@ -4,59 +4,106 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Palette: brand colour shades only. Tokens are added here only when a colour
- * is actually used by a semantic token or component (no unused palette entries).
- * All UI colours reference this palette.
+ * Palette: grid source of truth – 7 families × 11 shades (50–950) + black, white, gold.
+ * Matches the style guide grid exactly. Do not add one-off tokens; use a grid shade.
  */
 :root {
-  /* Ghost White scale (base #E7ECEE) – used for primary-foreground, card, popover */
-  --palette-ghost-white-50: #FEFEFE;
-  --palette-ghost-white-500: #E7ECEE;
-  /* Page background (light mode) */
-  --palette-page-bg-light: #F6F8F9;
-  /* Card border (light mode) */
-  --palette-card-border-light: #E6F1F2;
-  /* Soft Black scale (base #1F2024) – used for foreground, primary, dark backgrounds */
-  --palette-soft-black-950: #0a0b0d;
-  --palette-soft-black-975: #050607;
-  --palette-soft-black-990: #030304;
-  --palette-soft-black-900: #0f1012;
-  --palette-soft-black-700: #1a1b1f;
-  --palette-soft-black-800: #151619;
-  --palette-soft-black-600: #1F2024;
-  --palette-soft-black-500: #25262b;
-  --palette-soft-black-400: #2c2d32;
-  /* Slate Blue (base #42525E) – default buttons, chart-2 */
-  --palette-slate-blue-400: #5a6b78;
-  --palette-slate-blue-500: #42525E;
-  --palette-slate-blue-600: #35404a;
-  /* Find.co Gold (base #CFE02D) – accent, CTA, chart-4 */
+  /* Find.co Gold */
+  --palette-find-gold-50: #FDFEF7;
+  --palette-find-gold-100: #FAFCEA;
+  --palette-find-gold-200: #F4F8D1;
+  --palette-find-gold-300: #EDF3AF;
+  --palette-find-gold-400: #E3ED85;
   --palette-find-gold-500: #CFE02D;
   --palette-find-gold-600: #AAB825;
-  --palette-find-gold-400: #E3ED85;
-  /* Sky Blue (base #2BACC1) – ring, chart-1 */
+  --palette-find-gold-700: #87921D;
+  --palette-find-gold-800: #636C16;
+  --palette-find-gold-900: #42480E;
+  --palette-find-gold-950: #252808;
+  /* Soft Black */
+  --palette-soft-black-50: #F6F6F6;
+  --palette-soft-black-100: #E9E9E9;
+  --palette-soft-black-200: #CECECF;
+  --palette-soft-black-300: #AAAAAC;
+  --palette-soft-black-400: #7D7E80;
+  --palette-soft-black-500: #1F2024;
+  --palette-soft-black-600: #191A1E;
+  --palette-soft-black-700: #141517;
+  --palette-soft-black-800: #0F0F11;
+  --palette-soft-black-900: #0A0A0C;
+  --palette-soft-black-950: #060606;
+  /* Slate Blue */
+  --palette-slate-blue-50: #F7F8F9;
+  --palette-slate-blue-100: #ECEEEF;
+  --palette-slate-blue-200: #D5D9DC;
+  --palette-slate-blue-300: #B7BDC2;
+  --palette-slate-blue-400: #919BA2;
+  --palette-slate-blue-500: #42525E;
+  --palette-slate-blue-600: #36434D;
+  --palette-slate-blue-700: #2B353D;
+  --palette-slate-blue-800: #20272D;
+  --palette-slate-blue-900: #151A1E;
+  --palette-slate-blue-950: #0C0F11;
+  /* Sky Blue */
+  --palette-sky-blue-50: #F7FCFD;
+  --palette-sky-blue-100: #EAF7F9;
+  --palette-sky-blue-200: #D0EDF1;
+  --palette-sky-blue-300: #AEDFE7;
+  --palette-sky-blue-400: #84CFDB;
   --palette-sky-blue-500: #2BACC1;
-  --palette-sky-blue-600: #238a9c;
-  /* Storm Blue (base #BEDBDC) – secondary, muted, chart-3 */
+  --palette-sky-blue-600: #238D9E;
+  --palette-sky-blue-700: #1C707D;
+  --palette-sky-blue-800: #15535D;
+  --palette-sky-blue-900: #0E373E;
+  --palette-sky-blue-950: #081F23;
+  /* Storm Blue */
+  --palette-storm-blue-50: #FCFEFE;
+  --palette-storm-blue-100: #F9FBFC;
+  --palette-storm-blue-200: #F1F7F7;
+  --palette-storm-blue-300: #E6F1F2;
+  --palette-storm-blue-400: #D9EAEB;
   --palette-storm-blue-500: #BEDBDC;
   --palette-storm-blue-600: #9CB4B4;
-  /* Destructive (base #DC2626) – errors, destructive actions */
+  --palette-storm-blue-700: #7C8E8F;
+  --palette-storm-blue-800: #5B696A;
+  --palette-storm-blue-900: #3D4646;
+  --palette-storm-blue-950: #222728;
+  /* Ghost White */
+  --palette-ghost-white-50: #FEFEFE;
+  --palette-ghost-white-100: #FDFDFD;
+  --palette-ghost-white-200: #FAFBFB;
+  --palette-ghost-white-300: #F6F8F9;
+  --palette-ghost-white-400: #F1F4F5;
+  --palette-ghost-white-500: #E7ECEE;
+  --palette-ghost-white-600: #BDC2C3;
+  --palette-ghost-white-700: #96999B;
+  --palette-ghost-white-800: #6F7172;
+  --palette-ghost-white-900: #4A4C4C;
+  --palette-ghost-white-950: #2A2A2B;
+  /* Destructive */
+  --palette-destructive-50: #FEF6F6;
+  --palette-destructive-100: #FCE9E9;
+  --palette-destructive-200: #F7CFCF;
+  --palette-destructive-300: #F2ADAD;
+  --palette-destructive-400: #EB8181;
   --palette-destructive-500: #DC2626;
   --palette-destructive-600: #B41F1F;
-  /* Image creation (YouTube thumbnail: text outline, fill, emphasis) */
+  --palette-destructive-700: #8F1919;
+  --palette-destructive-800: #6A1212;
+  --palette-destructive-900: #460C0C;
+  --palette-destructive-950: #280707;
+  /* Image creation (YouTube thumbnail) – approved */
   --palette-black: #000000;
   --palette-white: #FFFFFF;
   --palette-gold: #FFD700;
-  /* Button outline/ghost hover and alt text (light grey, dark blue-grey) */
-  --palette-button-hover-light: #D5D9DC;
-  --palette-button-hover-dark: #2B353D;
 
-  /* Typography tokens: use with font: var(--text-*) or individual var(--text-*-size) etc. */
+  /* Typography tokens: use with font: var(--text-*) or individual var(--text-*-size). Standard scale used site-wide. */
   --text-heading-1: bold 1.875rem/1.2 var(--font-space-grotesk), ui-sans-serif, sans-serif;
   --text-heading-2: 600 1.25rem/1.3 var(--font-space-grotesk), ui-sans-serif, sans-serif;
   --text-heading-3: 500 1.125rem/1.3 var(--font-space-grotesk), ui-sans-serif, sans-serif;
   --text-body: 400 1rem/1.5 var(--font-space-grotesk), ui-sans-serif, sans-serif;
   --text-small: 400 0.875rem/1.4 var(--font-space-grotesk), ui-sans-serif, sans-serif;
+  --text-caption: 400 0.6875rem/1.4 var(--font-space-grotesk), ui-sans-serif, sans-serif;
   /* Split form for reliable application (e.g. in React inline styles) */
   --text-heading-1-size: 1.875rem;
   --text-heading-1-weight: 700;
@@ -73,13 +120,14 @@
   --text-small-size: 0.875rem;
   --text-small-weight: 400;
   --text-small-height: 1.4;
+  --text-caption-size: 0.6875rem;
+  --text-caption-weight: 400;
+  --text-caption-height: 1.4;
   --font-family-sans: var(--font-space-grotesk), ui-sans-serif, sans-serif;
 }
 
 @theme inline {
-  /* Tailwind colour names: point to palette so utilities (bg-*, text-*) work */
-  --color-soft-black-990: var(--palette-soft-black-990);
-  --color-soft-black-975: var(--palette-soft-black-975);
+  /* Tailwind colour names: point to palette so utilities (bg-*, text-*) work. Grid shades only (50–950). */
   --color-soft-black-950: var(--palette-soft-black-950);
   --color-soft-black-900: var(--palette-soft-black-900);
   --color-soft-black-800: var(--palette-soft-black-800);
@@ -87,9 +135,13 @@
   --color-soft-black-600: var(--palette-soft-black-600);
   --color-soft-black-500: var(--palette-soft-black-500);
   --color-soft-black-400: var(--palette-soft-black-400);
+  --color-slate-blue-50: var(--palette-slate-blue-50);
+  --color-slate-blue-200: var(--palette-slate-blue-200);
   --color-slate-blue-400: var(--palette-slate-blue-400);
   --color-slate-blue: var(--palette-slate-blue-500);
   --color-slate-blue-600: var(--palette-slate-blue-600);
+  --color-slate-blue-700: var(--palette-slate-blue-700);
+  --color-storm-blue-300: var(--palette-storm-blue-300);
   --color-find-gold-600: var(--palette-find-gold-600);
   --color-find-gold-400: var(--palette-find-gold-400);
   --color-storm-blue-600: var(--palette-storm-blue-600);
@@ -141,15 +193,30 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* Typography: wire Tailwind text-* to design tokens so all sizes use one scale */
+  --text-xs: var(--text-caption-size);
+  --text-xs--line-height: var(--text-caption-height);
+  --text-sm: var(--text-small-size);
+  --text-sm--line-height: var(--text-small-height);
+  --text-base: var(--text-body-size);
+  --text-base--line-height: var(--text-body-height);
+  --text-lg: var(--text-heading-3-size);
+  --text-lg--line-height: var(--text-heading-3-height);
+  --text-xl: var(--text-heading-2-size);
+  --text-xl--line-height: var(--text-heading-2-height);
+  --text-2xl: 1.5rem;
+  --text-2xl--line-height: 1.5;
+  --text-3xl: var(--text-heading-1-size);
+  --text-3xl--line-height: var(--text-heading-1-height);
 }
 
 :root {
   --radius: 0.625rem;
-  /* Light mode – all from palette */
-  --background: var(--palette-page-bg-light);
-  --foreground: var(--palette-soft-black-600);
+  /* Light mode – all from grid palette */
+  --background: var(--palette-ghost-white-300);
+  --foreground: var(--palette-soft-black-500);
   --card: var(--palette-ghost-white-50);
-  --card-border: var(--palette-card-border-light);
+  --card-border: var(--palette-storm-blue-300);
   --card-foreground: var(--foreground);
   --popover: var(--palette-ghost-white-50);
   --popover-foreground: var(--foreground);
@@ -184,19 +251,17 @@
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: rgba(66, 82, 94, 0.35);
   --sidebar-ring: var(--palette-sky-blue-500);
-  /* Outline, ghost, link button text: slate blue in light */
   --button-alt-foreground: var(--palette-slate-blue-500);
-  /* Outline + ghost hover fill */
-  --button-outline-ghost-hover-bg: var(--palette-button-hover-light);
+  --button-outline-ghost-hover-bg: var(--palette-slate-blue-200);
 }
 
 .dark {
-  --background: var(--palette-soft-black-990);
+  --background: var(--palette-soft-black-950);
   --foreground: var(--palette-ghost-white-500);
-  --card: var(--palette-soft-black-975);
+  --card: var(--palette-soft-black-900);
   --card-border: var(--border);
   --card-foreground: var(--foreground);
-  --popover: var(--palette-soft-black-975);
+  --popover: var(--palette-soft-black-900);
   --popover-foreground: var(--foreground);
   --primary: var(--palette-slate-blue-500);
   --primary-hover: var(--palette-slate-blue-400);
@@ -221,7 +286,7 @@
   --chart-3: var(--palette-storm-blue-500);
   --chart-4: var(--palette-find-gold-500);
   --chart-5: var(--palette-sky-blue-600);
-  --sidebar: var(--palette-soft-black-990);
+  --sidebar: var(--palette-soft-black-950);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--palette-slate-blue-500);
   --sidebar-primary-foreground: var(--palette-ghost-white-500);
@@ -229,18 +294,16 @@
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: rgba(255, 255, 255, 0.08);
   --sidebar-ring: var(--palette-sky-blue-500);
-  /* Outline, ghost, link button text: light grey in dark */
-  --button-alt-foreground: var(--palette-button-hover-light);
-  /* Outline + ghost hover fill */
-  --button-outline-ghost-hover-bg: var(--palette-button-hover-dark);
+  --button-alt-foreground: var(--palette-slate-blue-200);
+  --button-outline-ghost-hover-bg: var(--palette-slate-blue-700);
 }
 
 /* Theme preview blocks (style guide) – same palette refs */
 .theme-preview-light {
-  --background: var(--palette-page-bg-light);
-  --foreground: var(--palette-soft-black-600);
+  --background: var(--palette-ghost-white-300);
+  --foreground: var(--palette-soft-black-500);
   --card: var(--palette-ghost-white-50);
-  --card-border: var(--palette-card-border-light);
+  --card-border: var(--palette-storm-blue-300);
   --card-foreground: var(--foreground);
   --popover: var(--palette-ghost-white-50);
   --popover-foreground: var(--foreground);
@@ -263,15 +326,15 @@
   --input: rgba(66, 82, 94, 0.5);
   --ring: var(--palette-sky-blue-500);
   --button-alt-foreground: var(--palette-slate-blue-500);
-  --button-outline-ghost-hover-bg: var(--palette-button-hover-light);
+  --button-outline-ghost-hover-bg: var(--palette-slate-blue-200);
 }
 .theme-preview-dark {
-  --background: var(--palette-soft-black-990);
+  --background: var(--palette-soft-black-950);
   --foreground: var(--palette-ghost-white-500);
-  --card: var(--palette-soft-black-975);
+  --card: var(--palette-soft-black-900);
   --card-border: var(--border);
   --card-foreground: var(--foreground);
-  --popover: var(--palette-soft-black-975);
+  --popover: var(--palette-soft-black-900);
   --popover-foreground: var(--foreground);
   --primary: var(--palette-slate-blue-500);
   --primary-hover: var(--palette-slate-blue-400);
@@ -291,8 +354,8 @@
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.12);
   --ring: var(--palette-sky-blue-500);
-  --button-alt-foreground: var(--palette-button-hover-light);
-  --button-outline-ghost-hover-bg: var(--palette-button-hover-dark);
+  --button-alt-foreground: var(--palette-slate-blue-200);
+  --button-outline-ghost-hover-bg: var(--palette-slate-blue-700);
 }
 /* Override: button styles in style guide theme previews so outline/ghost show correct hover */
 .theme-preview-light [data-slot="button"].bg-destructive {
@@ -336,4 +399,5 @@
   .text-heading-3 { font: var(--text-heading-3); }
   .text-body-token { font: var(--text-body); }
   .text-small-token { font: var(--text-small); }
+  .text-caption-token { font: var(--text-caption); }
 }

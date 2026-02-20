@@ -23,7 +23,7 @@ export default function Home() {
         <div className="flex flex-col items-center gap-6 text-left w-full relative">
           {/* Small informational text */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-full inline-flex">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <div className="w-2 h-2 rounded-full bg-accent animate-pulse"></div>
             <span>New from the design team: tools that save you hours</span>
           </div>
           

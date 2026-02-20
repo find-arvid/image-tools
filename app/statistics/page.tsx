@@ -126,7 +126,7 @@ export default function StatisticsPage() {
                   {(() => {
                     const timeSaved = stats['webo-news-overlay'] * TIME_SAVED_PER_USE['webo-news-overlay'];
                     return timeSaved > 0 && (
-                      <p className="text-sm font-medium text-green-400 mt-3">
+                      <p className="text-sm font-medium text-muted-foreground mt-3">
                         ⏱️ Time saved: {formatTimeSaved(timeSaved)}
                       </p>
                     );
@@ -151,7 +151,7 @@ export default function StatisticsPage() {
                   {(() => {
                     const timeSaved = stats['ccn-image-optimiser'] * TIME_SAVED_PER_USE['ccn-image-optimiser'];
                     return timeSaved > 0 && (
-                      <p className="text-sm font-medium text-green-400 mt-3">
+                      <p className="text-sm font-medium text-muted-foreground mt-3">
                         ⏱️ Time saved: {formatTimeSaved(timeSaved)}
                       </p>
                     );

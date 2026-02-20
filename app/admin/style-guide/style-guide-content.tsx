@@ -75,34 +75,32 @@ function getColorUsagesFromAudit(hex: string, audit: StyleGuideAudit) {
   return audit.usageByHex[key] ?? [];
 }
 
+function getComponentUsagesFromAudit(hex: string, audit: StyleGuideAudit) {
+  const key = normalizeHex(hex.startsWith('#') ? hex : `#${hex}`);
+  return audit.componentUsageByHex[key] ?? [];
+}
+
 export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
   const getColorUsages = (hex: string) => getColorUsagesFromAudit(hex, audit);
+  const getComponentUsages = (hex: string) => getComponentUsagesFromAudit(hex, audit);
   const [colorDialogOpen, setColorDialogOpen] = useState(false);
   const [selectedColorHex, setSelectedColorHex] = useState<string | null>(null);
   const [selectedColorToken, setSelectedColorToken] = useState<string | null>(null);
   const [dialogCopied, setDialogCopied] = useState<'hex' | 'token' | null>(null);
-  const [copiedSwatchKey, setCopiedSwatchKey] = useState<string | null>(null);
-  const [copiedLandedKey, setCopiedLandedKey] = useState<string | null>(null);
-  const copyTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const FLIP_MS = 500;
   const COPIED_DISPLAY_MS = 1500;
 
   const copyHex = (hex: string, swatchKey: string) => {
     const fullHex = hex.startsWith('#') ? hex : `#${hex}`;
     navigator.clipboard.writeText(fullHex);
-    copyTimeoutsRef.current.forEach(clearTimeout);
-    copyTimeoutsRef.current = [];
-    setCopiedSwatchKey(swatchKey);
-    copyTimeoutsRef.current.push(
-      setTimeout(() => {
-        setCopiedSwatchKey(null);
-        setCopiedLandedKey(swatchKey);
-      }, FLIP_MS)
-    );
-    copyTimeoutsRef.current.push(
-      setTimeout(() => setCopiedLandedKey(null), FLIP_MS + COPIED_DISPLAY_MS)
-    );
+    if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
+    setCopiedKey(swatchKey);
+    copyTimeoutRef.current = setTimeout(() => {
+      setCopiedKey(null);
+      copyTimeoutRef.current = null;
+    }, COPIED_DISPLAY_MS);
   };
 
   const openColorDialog = (e: React.MouseEvent, hex: string, token: string) => {
@@ -120,7 +118,8 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
   };
 
   const usages = selectedColorHex ? getColorUsages(selectedColorHex) : [];
-  const usageCount = usages.length;
+  const componentUsages = selectedColorHex ? getComponentUsages(selectedColorHex) : [];
+  const usageCount = componentUsages.length > 0 ? componentUsages.length : usages.length;
 
   useEffect(() => {
     if (!colorDialogOpen) return;
@@ -172,9 +171,12 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
           </Alert>
         )}
 
-        {/* Brand colour shades – Tailwind-style scale per brand colour */}
-        <div className="pt-6 w-full">
-          <h3 className="text-sm font-semibold text-foreground mb-2">Brand colour shades (Tailwind scale)</h3>
+        {/* Palette grid – source of truth. globals.css must match this exactly (7 families × 11 shades + black, white, gold). */}
+        <div className="pt-4 w-full">
+          <h3 className="text-sm font-semibold text-foreground mb-2">Palette (source of truth)</h3>
+          <p className="text-xs text-muted-foreground mb-3 max-w-2xl">
+            The grid defines every palette colour. <span className="font-mono text-foreground">app/globals.css</span> must list only these tokens (7 families × 50–950 + black, white, gold for YouTube thumbnail).
+          </p>
           <div className="grid grid-cols-11 gap-1 w-full">
             {[
               { name: 'Find.co Gold', base: '#CFE02D' },
@@ -192,13 +194,11 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
                 const bg = `#${hex}`;
                 const isLight = luminance(bg) > 0.45;
                 const textColor = isLight ? '#1F2024' : '#E7ECEE';
-                const isBase = shade === 500;
                 const token = getPaletteTokenName(slug, shade);
                 const swatchUsages = getColorUsages(bg);
                 const hasUsage = swatchUsages.length > 0;
                 const swatchKey = `${name}-${shade}`;
-                const isFlipping = copiedSwatchKey === swatchKey;
-                const isLanded = copiedLandedKey === swatchKey;
+                const isCopied = copiedKey === swatchKey;
                 return (
                   <div key={swatchKey} className="min-h-[4.5rem]">
                     <div
@@ -207,51 +207,29 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
                       onClick={() => copyHex(bg, swatchKey)}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyHex(bg, swatchKey); } }}
                       title={`Copy ${bg}`}
-                      className={`flex flex-col items-center justify-center rounded-lg min-h-[4.5rem] relative cursor-pointer transition-opacity hover:opacity-90 active:opacity-95 ${isFlipping ? 'animate__animated animate__flip animate__faster' : ''}`}
+                      className="flex flex-col items-center justify-center rounded-lg min-h-[4.5rem] relative cursor-pointer transition-opacity hover:opacity-90 active:opacity-95"
                       style={{ backgroundColor: bg }}
                     >
-                        {isLanded ? (
-                          <span className="text-[11px] font-semibold leading-tight" style={{ color: textColor }}>
-                            Copied
-                          </span>
-                        ) : (
+                      {hasUsage && (
+                        <span className="absolute top-1.5 left-1.5 min-w-[14px] h-4 px-1 rounded flex items-center justify-center bg-soft-black-950/40 text-xs font-medium text-inverse-foreground" aria-hidden>
+                          {swatchUsages.length}
+                        </span>
+                      )}
+                      {hasUsage && (
+                        <Button type="button" variant="ghost" size="icon" className="absolute top-1.5 right-1.5 h-4 w-4 min-w-0 rounded flex items-center justify-center opacity-70 hover:opacity-100 bg-transparent hover:bg-soft-black-950/20 border-0" style={{ color: textColor }} aria-label="Colour info" onClick={(e) => openColorDialog(e, bg, token)}>
+                          <Info className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {isCopied ? (
+                        <span className="text-xs font-semibold leading-tight" style={{ color: textColor }}>Copied</span>
+                      ) : (
                         <>
-                          {hasUsage && (
-                            <span
-                              className="absolute top-1.5 left-1.5 min-w-[14px] h-4 px-1 rounded flex items-center justify-center bg-soft-black-990/40 text-[9px] font-medium text-inverse-foreground"
-                              aria-hidden
-                            >
-                              {swatchUsages.length}
-                            </span>
-                          )}
-                          {hasUsage && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-1.5 right-1.5 h-4 w-4 min-w-0 rounded flex items-center justify-center opacity-70 hover:opacity-100 bg-transparent hover:bg-soft-black-990/20 border-0"
-                              style={{ color: textColor }}
-                              aria-label="Colour info"
-                              onClick={(e) => openColorDialog(e, bg, token)}
-                            >
-                              <Info className="h-3 w-3" />
-                            </Button>
-                          )}
-                          <span className="text-[11px] font-semibold leading-tight" style={{ color: textColor }}>
-                            {shade}
-                          </span>
-                          <span className="text-[9px] font-mono leading-tight" style={{ color: textColor }}>
-                            {hex}
-                          </span>
-                          {isBase && (
-                            <span
-                              className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] font-medium leading-tight"
-                              style={{ color: textColor }}
-                            >
-                              {name}
-                            </span>
-                          )}
+                          <span className="text-xs font-semibold leading-tight" style={{ color: textColor }}>{shade}</span>
+                          <span className="text-xs font-mono leading-tight" style={{ color: textColor }}>{hex}</span>
                         </>
+                      )}
+                      {shade === 500 && (
+                        <span className="absolute bottom-1.5 left-1.5 right-1.5 text-center text-xs font-medium leading-tight uppercase" style={{ color: textColor }}>{name}</span>
                       )}
                     </div>
                   </div>
@@ -259,85 +237,33 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
               });
             })}
           </div>
-        </div>
-
-        {/* Authorised colours for image creation (e.g. YouTube thumbnail) – same card format as grid */}
-        <div className="pt-8 space-y-3">
-          <h3 className="text-sm font-semibold text-foreground">Image creation colours</h3>
-          <p className="text-xs text-muted-foreground">
-            Authorised palette colours used when generating images (e.g. canvas text and effects). Tokens: <span className="font-mono text-foreground">--palette-black</span>, <span className="font-mono text-foreground">--palette-white</span>, <span className="font-mono text-foreground">--palette-gold</span>.
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 w-full max-w-[32rem]">
-            {[
-              { name: 'Black', hex: '#000000', token: '--palette-black', page: 'YouTube thumbnail' },
-              { name: 'White', hex: '#FFFFFF', token: '--palette-white', page: 'YouTube thumbnail' },
-              { name: 'Gold', hex: '#FFD700', token: '--palette-gold', page: 'YouTube thumbnail' },
-            ].map(({ name, hex, token, page }) => {
-              const bg = hex;
-              const isLight = luminance(bg) > 0.45;
-              const textColor = isLight ? '#1F2024' : '#E7ECEE';
-              const swatchUsages = getColorUsages(bg);
-              const hasUsage = swatchUsages.length > 0;
-              const swatchKey = `image-${name.toLowerCase()}`;
-              const isFlipping = copiedSwatchKey === swatchKey;
-              const isLanded = copiedLandedKey === swatchKey;
-              return (
-                <div key={hex} className="min-h-[4.5rem]">
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => copyHex(bg, swatchKey)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyHex(bg, swatchKey); } }}
-                    title={`Copy ${bg}`}
-                    className={`flex flex-col items-center justify-center rounded-lg min-h-[4.5rem] relative cursor-pointer transition-opacity hover:opacity-90 active:opacity-95 ${isFlipping ? 'animate__animated animate__flip animate__faster' : ''}`}
-                    style={{ backgroundColor: bg }}
-                  >
-                    {isLanded ? (
-                      <span className="text-[11px] font-semibold leading-tight" style={{ color: textColor }}>
-                        Copied
-                      </span>
-                    ) : (
-                      <>
-                        {hasUsage && (
-                          <span
-                            className="absolute top-1.5 left-1.5 min-w-[14px] h-4 px-1 rounded flex items-center justify-center bg-soft-black-990/40 text-[9px] font-medium text-inverse-foreground"
-                            aria-hidden
-                          >
-                            {swatchUsages.length}
-                          </span>
-                        )}
-                        {hasUsage && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-1.5 right-1.5 h-4 w-4 min-w-0 rounded flex items-center justify-center opacity-70 hover:opacity-100 bg-transparent hover:bg-soft-black-990/20 border-0"
-                            style={{ color: textColor }}
-                            aria-label="Colour info"
-                            onClick={(e) => openColorDialog(e, bg, token)}
-                          >
-                            <Info className="h-3 w-3" />
-                          </Button>
-                        )}
-                        <span className="text-[11px] font-semibold leading-tight" style={{ color: textColor }}>
-                          {name}
-                        </span>
-                        <span className="text-[9px] font-mono leading-tight" style={{ color: textColor }}>
-                          {hex.replace(/^#/, '')}
-                        </span>
-                        <span
-                          className="absolute bottom-1.5 left-1.5 right-1.5 text-[11px] font-medium leading-tight text-left truncate"
-                          style={{ color: textColor }}
-                          title={page}
-                        >
-                          {page}
-                        </span>
-                      </>
-                    )}
+          <div className="mt-4 pt-4 border-t border-border">
+            <p className="text-xs font-medium text-foreground mb-2">Image creation (YouTube thumbnail) – approved</p>
+            <div className="grid grid-cols-3 gap-2 max-w-[20rem]">
+              {[
+                { name: 'Black', hex: '#000000', token: '--palette-black' },
+                { name: 'White', hex: '#FFFFFF', token: '--palette-white' },
+                { name: 'Gold', hex: '#FFD700', token: '--palette-gold' },
+              ].map(({ name, hex, token }) => {
+                const bg = hex;
+                const isLight = luminance(bg) > 0.45;
+                const textColor = isLight ? '#1F2024' : '#E7ECEE';
+                const swatchKey = `img-${name}`;
+                const isCopied = copiedKey === swatchKey;
+                return (
+                  <div key={token} className="min-h-[4rem]">
+                    <div role="button" tabIndex={0} onClick={() => copyHex(bg, swatchKey)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyHex(bg, swatchKey); } }} title={`Copy ${bg}`} className="flex flex-col items-center justify-center rounded-lg min-h-[4rem] relative cursor-pointer transition-opacity hover:opacity-90" style={{ backgroundColor: bg }}>
+                      {isCopied ? (
+                        <span className="text-xs font-semibold" style={{ color: textColor }}>Copied</span>
+                      ) : (
+                        <span className="text-xs font-mono" style={{ color: textColor }}>{hex}</span>
+                      )}
+                      <span className="absolute bottom-1.5 left-1.5 right-1.5 text-center text-xs font-semibold uppercase" style={{ color: textColor }}>{name}</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -350,72 +276,56 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
         <p className="text-xs text-muted-foreground">
           Font: Space Grotesk (<code className="text-foreground">--font-space-grotesk</code>). Text colour: <code className="text-foreground">var(--foreground)</code>; muted: <code className="text-foreground">text-muted-foreground</code>. Use tokens via <code className="text-foreground">font: var(--text-*)</code> or utility classes below.
         </p>
-        {/* Typography audit: token vs raw usage */}
-        {audit.typography && (
-          <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs">
-            <p className="font-medium text-foreground mb-1.5">Usage (site-wide audit)</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <p className="text-muted-foreground mb-0.5">Token / utility</p>
-                <ul className="space-y-0.5 font-mono">
-                  {audit.typography.tokens.map((token) => {
-                    const occurrences = audit.typography.byToken[token] ?? [];
-                    return (
-                      <li key={token} className="flex items-center gap-2">
-                        <span className="text-foreground">{token}</span>
-                        <span className="text-muted-foreground">({occurrences.length})</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-              <div>
-                <p className="text-muted-foreground mb-0.5">Raw classes (prefer tokens)</p>
-                <ul className="space-y-0.5 font-mono">
-                  {Object.entries(audit.typography.byRawClass)
-                    .filter(([, occ]) => occ.length > 0)
-                    .sort((a, b) => b[1].length - a[1].length)
-                    .map(([cls, occurrences]) => (
-                      <li key={cls} className="flex items-center gap-2">
-                        <span className="text-foreground">{cls}</span>
-                        <span className="text-muted-foreground">({occurrences.length})</span>
-                      </li>
-                    ))}
-                </ul>
-                {Object.values(audit.typography.byRawClass).every((a) => a.length === 0) && (
-                  <p className="text-muted-foreground italic">None found</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        <p className="text-sm text-muted-foreground">
+          The design system defines <strong className="text-foreground">6 semantic styles</strong>. Tailwind classes <code className="text-foreground">text-xs</code>–<code className="text-foreground">text-3xl</code> are wired to these tokens in <code className="text-foreground">@theme</code> in <code className="text-foreground">app/globals.css</code>, so all font sizes on the site use this single scale.
+        </p>
+
+        <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-2">
+          <h3 className="text-sm font-semibold text-foreground">How it works</h3>
+          <p className="text-xs text-muted-foreground">
+            There are <strong className="text-foreground">no separate styles for buttons, menus, or cards</strong>. Every text element uses one of the 6 sizes above. You choose the size that fits the role (e.g. button label = Small, card label = Caption).
+          </p>
+          <p className="text-xs text-muted-foreground font-medium text-foreground">Where each size is used:</p>
+          <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+            <li><strong className="text-foreground">Caption (text-xs):</strong> Colour card (shade, hex, name), usage badge, table cells, menu description, nav category label, tiny labels</li>
+            <li><strong className="text-foreground">Small (text-sm):</strong> Button label, menu item label, section subheadings, secondary body copy</li>
+            <li><strong className="text-foreground">Body (text-base):</strong> Main paragraph text, form content</li>
+            <li><strong className="text-foreground">Heading 3 (text-lg):</strong> Subsections, card titles</li>
+            <li><strong className="text-foreground">Heading 2 (text-xl):</strong> Section headings (e.g. “Colors”, “Typography” on this page)</li>
+            <li><strong className="text-foreground">Heading 1 (text-3xl):</strong> Page title</li>
+          </ul>
+        </div>
+
         <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-border bg-muted/50">
-                <th className="px-3 py-2 text-[11px] font-semibold text-foreground">Style</th>
-                <th className="px-3 py-2 text-[11px] font-semibold text-foreground">Sample</th>
-                <th className="px-3 py-2 text-[11px] font-semibold text-foreground">Token</th>
-                <th className="px-3 py-2 text-[11px] font-semibold text-foreground">Class</th>
-                <th className="px-3 py-2 text-[11px] font-semibold text-foreground">Usage</th>
-                <th className="px-3 py-2 text-[11px] font-semibold text-foreground">Page</th>
+                <th className="px-3 py-2 text-xs font-semibold text-foreground">Style</th>
+                <th className="px-3 py-2 text-xs font-semibold text-foreground">Sample</th>
+                <th className="px-3 py-2 text-xs font-semibold text-foreground">Tailwind</th>
+                <th className="px-3 py-2 text-xs font-semibold text-foreground">Token</th>
+                <th className="px-3 py-2 text-xs font-semibold text-foreground">Size</th>
+                <th className="px-3 py-2 text-xs font-semibold text-foreground">Use</th>
+                <th className="px-3 py-2 text-xs font-semibold text-foreground text-right" title="Uses of token / token class"># Token</th>
+                <th className="px-3 py-2 text-xs font-semibold text-foreground text-right" title="Uses of Tailwind class"># Class</th>
               </tr>
             </thead>
             <tbody>
               {[
-                { label: 'Heading 1', token: '--text-heading-1', tokenClass: 'text-heading-1', class: 'text-3xl font-bold', page: 'Page titles', muted: false, size: '--text-heading-1-size', weight: '--text-heading-1-weight', height: '--text-heading-1-height' },
-                { label: 'Heading 2', token: '--text-heading-2', tokenClass: 'text-heading-2', class: 'text-xl font-semibold', page: 'Section headings', muted: false, size: '--text-heading-2-size', weight: '--text-heading-2-weight', height: '--text-heading-2-height' },
-                { label: 'Heading 3', token: '--text-heading-3', tokenClass: 'text-heading-3', class: 'text-lg font-medium', page: 'Subsections', muted: false, size: '--text-heading-3-size', weight: '--text-heading-3-weight', height: '--text-heading-3-height' },
-                { label: 'Body text', token: '--text-body', tokenClass: 'text-body-token', class: 'text-base', page: 'Body copy', muted: false, size: '--text-body-size', weight: '--text-body-weight', height: '--text-body-height' },
-                { label: 'Small / muted', token: '--text-small', tokenClass: 'text-small-token text-muted-foreground', class: 'text-sm text-muted-foreground', page: 'Labels, captions', muted: true, size: '--text-small-size', weight: '--text-small-weight', height: '--text-small-height' },
-              ].map(({ label, token, tokenClass, class: typeClass, page, muted, size, weight, height }) => (
+                { label: 'Heading 1', tailwind: 'text-3xl', token: '--text-heading-1', size: '1.875rem (30px)', use: 'Page titles', tokenClass: 'text-heading-1', muted: false, sizeVar: '--text-heading-1-size', weight: '--text-heading-1-weight', height: '--text-heading-1-height' },
+                { label: 'Heading 2', tailwind: 'text-xl', token: '--text-heading-2', size: '1.25rem (20px)', use: 'Section headings', tokenClass: 'text-heading-2', muted: false, sizeVar: '--text-heading-2-size', weight: '--text-heading-2-weight', height: '--text-heading-2-height' },
+                { label: 'Heading 3', tailwind: 'text-lg', token: '--text-heading-3', size: '1.125rem (18px)', use: 'Subsections', tokenClass: 'text-heading-3', muted: false, sizeVar: '--text-heading-3-size', weight: '--text-heading-3-weight', height: '--text-heading-3-height' },
+                { label: 'Body text', tailwind: 'text-base', token: '--text-body', size: '1rem (16px)', use: 'Body copy', tokenClass: 'text-body-token', muted: false, sizeVar: '--text-body-size', weight: '--text-body-weight', height: '--text-body-height' },
+                { label: 'Small / muted', tailwind: 'text-sm', token: '--text-small', size: '0.875rem (14px)', use: 'Labels, captions', tokenClass: 'text-small-token text-muted-foreground', muted: true, sizeVar: '--text-small-size', weight: '--text-small-weight', height: '--text-small-height' },
+                { label: 'Caption', tailwind: 'text-xs', token: '--text-caption', size: '0.6875rem (11px)', use: 'Table headers, badges', tokenClass: 'text-caption-token', muted: false, sizeVar: '--text-caption-size', weight: '--text-caption-weight', height: '--text-caption-height' },
+              ].map(({ label, tailwind, token, size, use, tokenClass, muted, sizeVar, weight, height }) => (
                 <tr key={label} className="border-b border-border last:border-b-0">
-                  <td className="px-3 py-2 text-[11px] font-medium text-foreground">{label}</td>
+                  <td className="px-3 py-2 text-xs font-medium text-foreground">{label}</td>
                   <td className="px-3 py-2">
                     <span
                       className={muted ? 'text-muted-foreground' : 'text-foreground'}
                       style={{
-                        fontSize: `var(${size})`,
+                        fontSize: `var(${sizeVar})`,
                         fontWeight: `var(${weight})`,
                         lineHeight: `var(${height})`,
                         fontFamily: 'var(--font-family-sans)',
@@ -424,17 +334,24 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
                       {label}
                     </span>
                   </td>
-                  <td className="px-3 py-2 text-[9px] font-mono text-muted-foreground">{token}</td>
-                  <td className="px-3 py-2 text-[9px] font-mono text-muted-foreground">{typeClass}</td>
-                  <td className="px-3 py-2 text-[11px] text-muted-foreground">
+                  <td className="px-3 py-2 text-xs font-mono text-muted-foreground">{tailwind}</td>
+                  <td className="px-3 py-2 text-xs font-mono text-muted-foreground">{token}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{size}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground">{use}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground text-right">
                     {audit.typography ? (audit.typography.byToken[token] ?? []).length : 0}
                   </td>
-                  <td className="px-3 py-2 text-[11px] text-muted-foreground">{page}</td>
+                  <td className="px-3 py-2 text-xs text-muted-foreground text-right">
+                    {audit.typography ? (audit.typography.byRawClass[tailwind] ?? []).length : 0}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <p className="text-xs text-muted-foreground">
+          <strong className="text-foreground">Token</strong> = uses of the design token or token utility class. <strong className="text-foreground">Class</strong> = uses of the Tailwind class site-wide. Sizes are in <code className="text-foreground">:root</code>; <code className="text-foreground">@theme</code> maps <code className="text-foreground">--text-xs</code>…<code className="text-foreground">--text-3xl</code> to these tokens. Prefer <code className="text-foreground">text-sm</code>, <code className="text-foreground">text-base</code>, <code className="text-foreground">text-lg</code>, etc.; avoid <code className="text-foreground">text-[14px]</code> or other arbitrary sizes.
+        </p>
       </section>
 
       {/* Radius & spacing */}
@@ -594,7 +511,7 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Choose…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="theme-preview-light">
                   <SelectItem value="one">Option one</SelectItem>
                   <SelectItem value="two">Option two</SelectItem>
                 </SelectContent>
@@ -622,7 +539,7 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Choose…" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="theme-preview-dark">
                   <SelectItem value="one">Option one</SelectItem>
                   <SelectItem value="two">Option two</SelectItem>
                 </SelectContent>
@@ -952,7 +869,7 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
           aria-labelledby="color-dialog-title"
         >
           <div
-            className="absolute inset-0 bg-soft-black-990/80"
+            className="absolute inset-0 bg-soft-black-950/80"
             onClick={() => setColorDialogOpen(false)}
           />
           <div className="relative z-[101] w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-lg border border-border bg-background p-6 shadow-lg gap-4 flex flex-col">
@@ -1011,22 +928,38 @@ export function StyleGuideContent({ audit }: { audit: StyleGuideAudit }) {
                 </p>
               )}
             </div>
-            <div className="min-h-0 flex flex-col">
-              <p className="text-xs font-medium text-foreground mb-2 shrink-0">Where this colour is used</p>
-              {usages.length > 0 ? (
-                <ul className="space-y-2 text-sm overflow-y-auto min-h-0 max-h-[40vh] pr-1">
-                  {usages.map((u, i) => (
-                    <li key={i} className="flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-muted-foreground">
-                      <span className="text-foreground">{u.token}</span>
-                      <span className="text-xs">in {u.file}</span>
-                      <span className="text-xs">({u.context})</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Not used yet. Add <span className="font-mono text-foreground">{selectedColorToken}</span> to the palette in globals.css when you need this shade.
-                </p>
+            <div className="min-h-0 flex flex-col space-y-3">
+              <div>
+                <p className="text-xs font-medium text-foreground mb-2 shrink-0">Used in components</p>
+                {componentUsages.length > 0 ? (
+                  <ul className="space-y-1.5 text-sm overflow-y-auto min-h-0 max-h-[40vh] pr-1 font-mono">
+                    {componentUsages.map((c, i) => (
+                      <li key={i} className="flex items-baseline gap-x-2 text-muted-foreground">
+                        <span className="text-foreground shrink-0">{c.file}</span>
+                        <span className="text-xs shrink-0">:{c.line}</span>
+                        <span className="text-xs truncate" title={c.token}>{c.token}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {usages.length > 0
+                      ? 'Only defined in globals.css (no Tailwind classes using this colour in app/components/lib).'
+                      : `Not used yet. Add ${selectedColorToken ?? 'this token'} to the palette in globals.css when you need this shade.`}
+                  </p>
+                )}
+              </div>
+              {usages.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-foreground mb-1 shrink-0">Defined via tokens</p>
+                  <ul className="space-y-1 text-xs text-muted-foreground font-mono">
+                    {usages.map((u, i) => (
+                      <li key={i}>
+                        {u.token} in {u.file} ({u.context})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
             <Button
@@ -1062,7 +995,7 @@ function ComboboxDemo() {
           <Combobox value={valueLight} onValueChange={setValueLight} items={items}>
             <ComboboxInput placeholder="Select…" className="w-full" />
             <ComboboxValue />
-            <ComboboxContent anchor={anchorRefLight}>
+            <ComboboxContent anchor={anchorRefLight} className="theme-preview-light">
               <ComboboxList>
                 <ComboboxEmpty>No results</ComboboxEmpty>
                 {items.map((item) => (
@@ -1083,7 +1016,7 @@ function ComboboxDemo() {
           <Combobox value={valueDark} onValueChange={setValueDark} items={items}>
             <ComboboxInput placeholder="Select…" className="w-full" />
             <ComboboxValue />
-            <ComboboxContent anchor={anchorRefDark}>
+            <ComboboxContent anchor={anchorRefDark} className="theme-preview-dark">
               <ComboboxList>
                 <ComboboxEmpty>No results</ComboboxEmpty>
                 {items.map((item) => (

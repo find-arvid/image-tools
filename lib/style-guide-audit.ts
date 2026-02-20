@@ -14,6 +14,13 @@ export type ColorUsage = {
   file: string;
 };
 
+/** Where a colour is consumed in the codebase (Tailwind class in a component). */
+export type ComponentColorUsage = {
+  file: string;
+  line: number;
+  token: string;
+};
+
 export type UnauthorisedColour = {
   value: string;
   hex: string;
@@ -48,6 +55,8 @@ export type ButtonAudit = {
 export type StyleGuideAudit = {
   /** Canonical hex (uppercase with #) → list of tokens that use it */
   usageByHex: Record<string, ColorUsage[]>;
+  /** Canonical hex → list of component/file locations where this colour is used (Tailwind classes) */
+  componentUsageByHex: Record<string, ComponentColorUsage[]>;
   /** Palette token → hex (e.g. --palette-soft-black-700 → #1A1B1F) */
   palette: Record<string, string>;
   /** Semantic token → resolved hex or null (e.g. --primary → #1F2024) per context */
@@ -67,6 +76,45 @@ function normalizeHex(hex: string): string {
   let h = hex.replace(/^#/, '').trim().toUpperCase();
   if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
   return h.length === 6 ? `#${h}` : hex;
+}
+
+/** Tailwind utility name from a CSS token (e.g. --color-find-gold-600 → find-gold-600, --accent-hover → accent-hover). */
+function tokenToSlug(token: string): string {
+  const withoutLeading = token.startsWith('--') ? token.slice(2) : token;
+  return withoutLeading.startsWith('color-') ? withoutLeading.slice(7) : withoutLeading;
+}
+
+/** Escape for use in RegExp. */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Find lines where slug appears in a Tailwind-class-like context (e.g. bg-find-gold-600, text-accent). */
+function findComponentUsages(
+  slug: string,
+  allFiles: { rel: string; content: string }[]
+): Array<{ file: string; line: number }> {
+  const escaped = escapeRegex(slug);
+  const re = new RegExp(
+    `(?:^|[\\s"'.\`]|[\\-/])${escaped}(?:/[\\d.]+)?(?=[\\s"'.\`)]|$)`,
+    'gm'
+  );
+  const results: Array<{ file: string; line: number }> = [];
+  const seen = new Set<string>();
+  for (const { rel, content } of allFiles) {
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      re.lastIndex = 0;
+      if (re.test(lines[i])) {
+        const key = `${rel}:${i + 1}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          results.push({ file: rel, line: i + 1 });
+        }
+      }
+    }
+  }
+  return results;
 }
 
 function extractDeclarations(blockBody: string): Map<string, string> {
@@ -196,11 +244,8 @@ export function runStyleGuideAudit(cssContent?: string): StyleGuideAudit {
     }
     if (hasPalette) break;
   }
-  for (const [token, hex] of Object.entries(palette)) {
-    const normalized = normalizeHex(hex);
-    if (!usageByHex[normalized]) usageByHex[normalized] = [];
-    usageByHex[normalized].push({ token, context: 'palette', file: AUDIT_FILE });
-  }
+  // Do not add palette definitions as "usage" – only semantic and @theme refs count.
+  // This keeps the style guide grid from showing every colour as "used" just because it's in the palette.
 
   // Semantic blocks (in order): :root then .dark then theme-preview-*
   const semanticSelectors = [':root', '.dark', '.theme-preview-light', '.theme-preview-dark'];
@@ -276,7 +321,35 @@ export function runStyleGuideAudit(cssContent?: string): StyleGuideAudit {
   const typography = runTypographyAudit(css, allFiles);
   const buttons = runButtonAudit(allFiles);
 
-  return { usageByHex, palette, semanticByContext, unauthorised, typography, buttons };
+  // Component-level usage: for each hex, find files/lines where its tokens are used as Tailwind classes
+  const componentUsageByHex: Record<string, ComponentColorUsage[]> = {};
+  for (const [hex, usages] of Object.entries(usageByHex)) {
+    const seen = new Set<string>();
+    const list: ComponentColorUsage[] = [];
+    for (const u of usages) {
+      const slug = tokenToSlug(u.token);
+      const locations = findComponentUsages(slug, allFiles);
+      for (const { file, line } of locations) {
+        const key = `${file}:${line}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push({ file, line, token: u.token });
+        }
+      }
+    }
+    list.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+    componentUsageByHex[hex] = list;
+  }
+
+  return {
+    usageByHex,
+    componentUsageByHex,
+    palette,
+    semanticByContext,
+    unauthorised,
+    typography,
+    buttons,
+  };
 }
 
 const TYPOGRAPHY_TOKENS = [
@@ -285,6 +358,7 @@ const TYPOGRAPHY_TOKENS = [
   '--text-heading-3',
   '--text-body',
   '--text-small',
+  '--text-caption',
 ];
 const TYPOGRAPHY_UTILITY_CLASSES = [
   'text-heading-1',
@@ -292,6 +366,7 @@ const TYPOGRAPHY_UTILITY_CLASSES = [
   'text-heading-3',
   'text-body-token',
   'text-small-token',
+  'text-caption-token',
 ];
 const RAW_TYPE_CLASSES = ['text-3xl', 'text-2xl', 'text-xl', 'text-lg', 'text-base', 'text-sm', 'text-xs'];
 

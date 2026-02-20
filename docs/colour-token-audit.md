@@ -8,9 +8,9 @@ All semantic tokens map to the palette:
 
 | Token | Light | Dark | Palette |
 |-------|--------|------|--------|
-| `--background` | ghost-white-500 | soft-black-990 | ✓ |
+| `--background` | ghost-white-500 | soft-black-950 | ✓ |
 | `--foreground` | soft-black-600 | ghost-white-500 | ✓ |
-| `--card` / `--popover` | ghost-white-50 | soft-black-975 | ✓ |
+| `--card` / `--popover` | ghost-white-50 | soft-black-900 | ✓ |
 | `--primary` | soft-black-600 | find-gold-500 | ✓ |
 | `--primary-foreground` | ghost-white-500 | soft-black-950 | ✓ |
 | `--secondary` / `--muted` | storm-blue-500 | soft-black-700/800 | ✓ |
@@ -24,12 +24,13 @@ All semantic tokens map to the palette:
 ## Changes made (audit fixes)
 
 - **Button (destructive):** `text-white` → `text-destructive-foreground` (palette: ghost-white-500).
-- **Dialog overlay:** `bg-black/80` → `bg-soft-black-990/80`.
+- **Dialog overlay:** `bg-black/80` → `bg-soft-black-950/80`.
 - **Navigation (active item):** `text-white`, `bg-white/20`, `text-white/80` → `text-inverse-foreground`, `bg-inverse-foreground/20`, `text-inverse-foreground/80`.
 - **Dropdown / Select / Combobox (highlight):** `text-white` → `text-inverse-foreground` (slate-blue bg already tokenised).
 - **Admin images:** Highlight ring/border/bg `#cfe02d` → `accent`; delete button and error text `red-500/600` → `destructive`; success text `green-500` → `text-muted-foreground` (no success colour in palette).
 - **Home (YouTube card):** Gradient `from-red-600 to-red-800` → `from-destructive to-destructive-600`.
-- **Style guide swatches:** Usage badge `bg-black/40`, `#fff` → `bg-soft-black-990/40`, `text-inverse-foreground`; info button `bg-black/0 hover:bg-black/20` → `bg-transparent hover:bg-soft-black-990/20`; experiment modal overlay `bg-black/80` → `bg-soft-black-990/80`.
+- **Style guide swatches:** Usage badge `bg-black/40`, `#fff` → `bg-soft-black-950/40`, `text-inverse-foreground`; info button `bg-black/0 hover:bg-black/20` → `bg-transparent hover:bg-soft-black-950/20`; experiment modal overlay `bg-black/80` → `bg-soft-black-950/80`.
+- **Modals (admin):** `bg-black/50` → `bg-soft-black-950/50`. Error text `text-red-400` → `text-destructive`. Success/green → `text-muted-foreground` or `bg-accent` where appropriate.
 
 ## Intentional non-token / hex usage
 
@@ -44,7 +45,7 @@ All semantic tokens map to the palette:
 ## Palette reference (brand shades)
 
 - **Find.co Gold** `#CFE02D` → accent, primary (dark)
-- **Soft Black** `#1F2024` (scale 400–990) → foreground, primary (light), dark surfaces
+- **Soft Black** `#1F2024` (scale 400–950) → foreground, primary (light), dark surfaces
 - **Slate Blue** `#42525E` → highlight (dropdown/select/combobox), chart-2, border/input tint
 - **Sky Blue** `#2BACC1` → ring, chart-1
 - **Storm Blue** `#BEDBDC` → secondary, muted, chart-3
